@@ -73,7 +73,8 @@ def _err(msg: str, code: int = 400) -> tuple:
 # ── EMBEDDED DASHBOARD HTML ────────────────────────────────
 # Embedded directly so the server is a single self-contained file.
 # No dashboard/index.html needed.
-DASHBOARD_HTML = """<!DOCTYPE html>
+DASHBOARD_HTML = """
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -914,14 +915,14 @@ function prettyJson(obj, indent=0) {
   if (Array.isArray(obj)) {
     if (obj.length === 0) return '[]';
     const items = obj.map(v => sp2 + prettyJson(v, indent+1));
-    return '[\n' + items.join(',\n') + '\n' + sp + ']';
+    return `[\n${items.join(',\n')}\n${sp}]`;
   }
   if (typeof obj === 'object' && obj !== null) {
     const entries = Object.entries(obj).map(([k,v]) => {
       const key = `<span class="json-key">"${k}"</span>`;
       return sp2 + key + ': ' + prettyJson(v, indent+1);
     });
-    return '{\n' + entries.join(',\n') + '\n' + sp + '}';
+    return `{\n${entries.join(',\n')}\n${sp}}`;
   }
   if (typeof obj === 'string')  return `<span class="json-str">"${obj}"</span>`;
   if (typeof obj === 'number')  return `<span class="json-num">${obj}</span>`;
@@ -1259,6 +1260,7 @@ document.getElementById('ep-tabs').addEventListener('click', async (e) => {
 </script>
 </body>
 </html>
+
 """
 # ───────────────────────────────────────────────────────────
 
