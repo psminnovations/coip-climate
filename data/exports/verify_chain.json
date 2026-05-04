@@ -1,0 +1,38 @@
+{
+  "chain": [
+    {
+      "index": 0,
+      "case_id": "GENESIS",
+      "case_hash": "95b8ca1112162472dee32e775c3eec09e655d8d95c8159d9eb7b930e9ae8f348",
+      "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "timestamp": "2026-05-01T00:00:00+00:00",
+      "block_hash": "54a24eb5aa822d9e75eac65735fdb1d8928bff6df841484abe32642cd38112b2",
+      "attestation_data": {
+        "district": "Guntur, Andhra Pradesh",
+        "pilot_start": "2026-05-01",
+        "license": "Apache 2.0",
+        "note": "COIP-Climate blockchain attestation chain \u2014 immutable case records"
+      }
+    },
+    {
+      "index": 1,
+      "case_id": "V1",
+      "case_hash": "d4ea8373dc8e555b3bfc304124d55852d3ccbb6970ab1ddca7d6a46b38d4f289",
+      "previous_hash": "54a24eb5aa822d9e75eac65735fdb1d8928bff6df841484abe32642cd38112b2",
+      "timestamp": "2026-05-04T06:09:50.551941+00:00",
+      "block_hash": "0f1600a38c220fb02249eb4fd0da36b2d09a9f9648cf7ddccf0cb31027bd7c9f",
+      "attestation_data": {
+        "district": "Guntur",
+        "mandal": "X",
+        "month": 5,
+        "climate_pathway": "HEAT_DIRECT",
+        "risk_level": "NORMAL",
+        "bus_score": 50.0,
+        "outcome": "ORS"
+      }
+    }
+  ],
+  "length": 2,
+  "last_updated": "2026-05-04T06:09:50.551996+00:00",
+  "district": "Guntur, Andhra Pradesh"
+}

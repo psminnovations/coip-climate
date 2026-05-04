@@ -1,0 +1,72 @@
+{
+  "chain": [
+    {
+      "index": 0,
+      "case_id": "GENESIS",
+      "case_hash": "95b8ca1112162472dee32e775c3eec09e655d8d95c8159d9eb7b930e9ae8f348",
+      "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "timestamp": "2026-05-01T00:00:00+00:00",
+      "block_hash": "54a24eb5aa822d9e75eac65735fdb1d8928bff6df841484abe32642cd38112b2",
+      "attestation_data": {
+        "district": "Guntur, Andhra Pradesh",
+        "pilot_start": "2026-05-01",
+        "license": "Apache 2.0",
+        "note": "COIP-Climate blockchain attestation chain \u2014 immutable case records"
+      }
+    },
+    {
+      "index": 1,
+      "case_id": "TEST-0",
+      "case_hash": "7a087a4c3f6aa43e6a3a7200b3ee4f4b70dcaaf2d371e19619efc030697e8625",
+      "previous_hash": "54a24eb5aa822d9e75eac65735fdb1d8928bff6df841484abe32642cd38112b2",
+      "timestamp": "2026-05-04T06:06:27.919469+00:00",
+      "block_hash": "1219ce861ff946bd15e3e605e06a242bc69a6537856d5233ed1c584293b40df0",
+      "attestation_data": {
+        "district": "Guntur",
+        "mandal": "Tadikonda",
+        "month": 5,
+        "climate_pathway": "HEAT_DIRECT",
+        "risk_level": "NORMAL",
+        "bus_score": 50.0,
+        "outcome": "ORS_HOME"
+      }
+    },
+    {
+      "index": 2,
+      "case_id": "TEST-1",
+      "case_hash": "cf5f057221e43cdf198054a8c5296a9d7a8179a76f82c88628591e114eadd8da",
+      "previous_hash": "1219ce861ff946bd15e3e605e06a242bc69a6537856d5233ed1c584293b40df0",
+      "timestamp": "2026-05-04T06:06:27.919661+00:00",
+      "block_hash": "2dde5f2d8e624e30c7f14e6290a8cac400be1e9326b80a18c2dcd8020352a809",
+      "attestation_data": {
+        "district": "Guntur",
+        "mandal": "Tadikonda",
+        "month": 5,
+        "climate_pathway": "HEAT_DIRECT",
+        "risk_level": "NORMAL",
+        "bus_score": 50.0,
+        "outcome": "ORS_HOME"
+      }
+    },
+    {
+      "index": 3,
+      "case_id": "TEST-2",
+      "case_hash": "f69ba581d13e1efbae436d99923266d461fdb84a4b628a48459596e633ab79c2",
+      "previous_hash": "2dde5f2d8e624e30c7f14e6290a8cac400be1e9326b80a18c2dcd8020352a809",
+      "timestamp": "2026-05-04T06:06:27.919980+00:00",
+      "block_hash": "671026bfa22605525726f6769e21ce849e0ea2259707d93f5068e4662b3e39f0",
+      "attestation_data": {
+        "district": "Guntur",
+        "mandal": "Tadikonda",
+        "month": 5,
+        "climate_pathway": "HEAT_DIRECT",
+        "risk_level": "NORMAL",
+        "bus_score": 50.0,
+        "outcome": "ORS_HOME"
+      }
+    }
+  ],
+  "length": 4,
+  "last_updated": "2026-05-04T06:06:27.920031+00:00",
+  "district": "Guntur, Andhra Pradesh"
+}
