@@ -1301,6 +1301,22 @@ class COIPHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(html)
 
+            elif path == "/a.html" or path == "/a":
+                # Serve dashboard/a.html
+                dashboard_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dashboard')
+                file_path = os.path.join(dashboard_dir, 'a.html')
+                if os.path.exists(file_path):
+                    with open(file_path, 'rb') as f:
+                        html = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.send_header("Content-Length", str(len(html)))
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+                    self.wfile.write(html)
+                else:
+                    self._send(_err("File not found", 404), 404)
+
             elif path == "/health":
                 self._send(_ok({
                     "healthy":    True,
