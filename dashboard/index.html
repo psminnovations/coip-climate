@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -840,14 +839,14 @@ function prettyJson(obj, indent=0) {
   if (Array.isArray(obj)) {
     if (obj.length === 0) return '[]';
     const items = obj.map(v => sp2 + prettyJson(v, indent+1));
-    return `[\n${items.join(',\n')}\n${sp}]`;
+    return '[\n' + items.join(',\n') + '\n' + sp + ']';
   }
   if (typeof obj === 'object' && obj !== null) {
     const entries = Object.entries(obj).map(([k,v]) => {
       const key = `<span class="json-key">"${k}"</span>`;
       return sp2 + key + ': ' + prettyJson(v, indent+1);
     });
-    return `{\n${entries.join(',\n')}\n${sp}}`;
+    return '{\n' + entries.join(',\n') + '\n' + sp + '}';
   }
   if (typeof obj === 'string')  return `<span class="json-str">"${obj}"</span>`;
   if (typeof obj === 'number')  return `<span class="json-num">${obj}</span>`;
