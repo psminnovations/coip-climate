@@ -3,1183 +3,730 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COIP-Climate · Live Dashboard · Guntur District</title>
+<title>COIP-Climate · Guntur District Live</title>
 <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <style>
-/* ── DESIGN DIRECTION: Mission-critical ops terminal meets editorial print ── */
-:root {
-  --api: 'https://web-production-9e7cf.up.railway.app';
-  --bg:       #040810;
-  --surface:  #080F1C;
-  --card:     #0C1525;
-  --border:   rgba(255,255,255,0.08);
-  --border-hi:rgba(255,255,255,0.16);
-
-  /* Temperature-responsive palette */
-  --heat-ext: #FF2D00;
-  --heat-hi:  #FF6B00;
-  --amber:    #F5A623;
-  --yellow:   #FFD600;
-  --green:    #00E676;
-  --teal:     #00BCD4;
-  --blue:     #2979FF;
-  --purple:   #AA00FF;
-
-  --t1: #F0F4FF;
-  --t2: #8898BB;
-  --t3: #3D4F6E;
-  --t4: #1E2C42;
-
-  --mono: 'Azeret Mono', monospace;
-  --serif: 'DM Serif Display', serif;
-  --sans: 'DM Sans', sans-serif;
-
-  /* Live from API */
-  --live-temp: 35.6;
-  --live-risk: #00E676;
+:root{
+  --bg:#040810;--card:#0C1525;--border:rgba(255,255,255,0.08);
+  --hi:rgba(255,255,255,0.14);
+  --r:#FF2D00;--o:#FF6B00;--y:#FFD600;--g:#00E676;--t:#00BCD4;--b:#2979FF;--p:#AA00FF;
+  --amber:#F5A623;
+  --t1:#F0F4FF;--t2:#8898BB;--t3:#3D4F6E;--t4:#1E2C42;
+  --mono:'Azeret Mono',monospace;--serif:'DM Serif Display',serif;--sans:'DM Sans',sans-serif;
 }
-
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-html { scroll-behavior: smooth; }
-
-body {
-  background: var(--bg);
-  color: var(--t1);
-  font-family: var(--sans);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* Scanline atmosphere */
-body::before {
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 3px,
-    rgba(0,200,255,0.006) 3px, rgba(0,200,255,0.006) 4px
-  );
-}
-
-/* Ambient glow */
-.ambient {
-  position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background:
-    radial-gradient(ellipse 60% 40% at 20% 10%, rgba(255,69,0,0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 50% at 80% 80%, rgba(0,188,212,0.05) 0%, transparent 60%);
-}
-
-.page { position:relative; z-index:1; }
-
-/* ════════════════════ MASTHEAD ════════════════════ */
-.masthead {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  padding: 0 32px;
-  height: 58px;
-  border-bottom: 1px solid var(--border-hi);
-  background: rgba(4,8,16,0.96);
-  backdrop-filter: blur(20px);
-  position: sticky; top:0; z-index:100;
-}
-
-.brand {
-  display: flex; align-items: center; gap: 14px;
-}
-
-.brand-logo {
-  font-family: var(--serif);
-  font-size: 20px;
-  color: var(--t1);
-  letter-spacing: -0.01em;
-}
-
-.brand-logo em { color: var(--heat-hi); font-style: normal; }
-
-.brand-pipe {
-  width: 1px; height: 22px;
-  background: var(--border-hi);
-}
-
-.brand-sub {
-  font-family: var(--mono);
-  font-size: 9px; color: var(--t3);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  line-height: 1.5;
-}
-
-.live-indicator {
-  display: flex; align-items: center; gap: 8px;
-  font-family: var(--mono); font-size: 9px;
-  letter-spacing: 0.15em; text-transform: uppercase;
-}
-
-.live-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 8px var(--green);
-  animation: ldot 1.8s ease-in-out infinite;
-}
-
-@keyframes ldot { 50% { opacity:0.3; box-shadow:none; } }
-
-.live-text { color: var(--green); }
-
-.api-url {
-  font-family: var(--mono); font-size: 9px; color: var(--t3);
-}
-
-.masthead-right {
-  display: flex; align-items: center; justify-content: flex-end; gap: 16px;
-}
-
-#clock {
-  font-family: var(--mono); font-size: 11px; color: var(--t3);
-}
-
-.unicef-badge {
-  font-family: var(--mono); font-size: 9px;
-  padding: 4px 10px; border-radius: 2px;
-  background: rgba(0,188,212,0.08);
-  border: 1px solid rgba(0,188,212,0.2);
-  color: var(--teal); letter-spacing: 0.1em;
-}
-
-/* ════════════════════ HERO STRIP ════════════════════ */
-.hero-strip {
-  padding: 20px 32px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center;
-  gap: 32px;
-  background: linear-gradient(90deg,
-    rgba(255,69,0,0.07) 0%, transparent 60%
-  );
-}
-
-.hero-title {
-  font-family: var(--serif);
-  font-size: clamp(22px,3vw,36px);
-  line-height: 1.1;
-  flex-shrink: 0;
-}
-
-.hero-title em { color: var(--heat-hi); font-style: italic; }
-
-.hero-spine {
-  flex: 1;
-  font-family: var(--sans);
-  font-size: 13px;
-  color: var(--t2);
-  line-height: 1.6;
-  border-left: 2px solid rgba(255,107,0,0.3);
-  padding-left: 20px;
-}
-
-.hero-spine strong { color: var(--t1); }
-
-/* ════════════════════ LOADING STATE ════════════════════ */
-.loading-overlay {
-  display: flex; align-items: center; justify-content: center;
-  gap: 12px;
-  padding: 60px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--t3);
-  letter-spacing: 0.1em;
-}
-
-.spin {
-  width: 18px; height: 18px;
-  border: 2px solid var(--border);
-  border-top-color: var(--teal);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin { to { transform:rotate(360deg); } }
-
-/* ════════════════════ MAIN GRID ════════════════════ */
-.main { padding: 24px 32px; max-width: 1440px; margin: 0 auto; }
-
-.section-rule {
-  display: flex; align-items: center; gap: 12px;
-  margin: 28px 0 14px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.sr-tag {
-  font-family: var(--mono); font-size: 8px;
-  padding: 3px 8px; border-radius: 2px;
-  letter-spacing: 0.15em; text-transform: uppercase;
-}
-
-.sr-title {
-  font-family: var(--mono); font-size: 10px;
-  color: var(--t2); letter-spacing: 0.1em; text-transform: uppercase;
-}
-
-.sr-line { flex:1; }
-
-/* ════════════════════ CLIMATE ROW ════════════════════ */
-.climate-row {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
-  margin-bottom: 4px;
-}
-
-.climate-tile {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 16px 14px;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.2s;
-}
-
-.climate-tile:hover { border-color: var(--border-hi); }
-
-.climate-tile::before {
-  content:''; position:absolute; top:0; left:0; right:0;
-  height: 2px;
-}
-
-.ct-temp::before    { background: var(--heat-hi); }
-.ct-aqi::before     { background: var(--amber); }
-.ct-humid::before   { background: var(--teal); }
-.ct-uv::before      { background: var(--yellow); }
-.ct-rain::before    { background: var(--blue); }
-.ct-risk::before    { background: var(--green); }
-
-.ct-icon { font-size: 18px; margin-bottom: 8px; }
-.ct-val {
-  font-family: var(--serif);
-  font-size: 28px; line-height: 1;
-  margin-bottom: 2px;
-}
-
-.ct-temp .ct-val    { color: var(--heat-hi); }
-.ct-aqi .ct-val     { color: var(--amber); }
-.ct-humid .ct-val   { color: var(--teal); }
-.ct-uv .ct-val      { color: var(--yellow); }
-.ct-rain .ct-val    { color: var(--blue); }
-.ct-risk .ct-val    { font-size: 18px; font-family: var(--mono); font-weight: 700; }
-
-.ct-label {
-  font-family: var(--mono); font-size: 8px;
-  color: var(--t3); letter-spacing: 0.12em;
-  text-transform: uppercase; margin-bottom: 3px;
-}
-
-.ct-source {
-  font-family: var(--mono); font-size: 8px;
-  color: var(--t4);
-}
-
-/* ════════════════════ 3-COL GRID ════════════════════ */
-.tri-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
-}
-
-@media (max-width: 900px) { .tri-grid { grid-template-columns: 1fr; } }
-
-/* ════════════════════ PANELS ════════════════════ */
-.panel {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.panel-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-}
-
-.ph-title {
-  font-family: var(--mono); font-size: 9px;
-  color: var(--t2); letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.ph-badge {
-  font-family: var(--mono); font-size: 8px;
-  padding: 2px 7px; border-radius: 2px;
-  letter-spacing: 0.08em;
-}
-
-.panel-body { padding: 14px; }
-
-/* ════════════════════ DISEASE ROWS ════════════════════ */
-.disease-list { display: flex; flex-direction: column; gap: 8px; }
-
-.disease-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.02);
-}
-
-.dr-icon { font-size: 14px; }
-.dr-name { flex:1; font-size: 11px; font-weight: 500; }
-.dr-level {
-  font-family: var(--mono); font-size: 9px;
-  padding: 2px 8px; border-radius: 2px;
-  text-transform: uppercase; letter-spacing: 0.1em;
-}
-
-.dr-bar { margin-top: 5px; height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; }
-.dr-bar-fill { height: 100%; border-radius: 2px; transition: width 1.2s ease; }
-
-/* ════════════════════ VULNERABILITY LIST ════════════════════ */
-.vuln-list { display: flex; flex-direction: column; gap: 6px; }
-
-.vuln-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 10px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.02);
-}
-
-.vr-rank {
-  font-family: var(--serif); font-size: 18px;
-  color: var(--t4); flex-shrink:0; width:24px;
-  line-height:1;
-}
-
-.vr-info { flex:1; }
-.vr-name { font-size: 11px; font-weight:500; margin-bottom:2px; }
-.vr-meta { font-family:var(--mono); font-size:8px; color:var(--t3); }
-
-.vr-score {
-  font-family: var(--mono); font-size: 13px;
-  font-weight: 700; text-align:right;
-}
-
-/* ════════════════════ FORECAST CHART ════════════════════ */
-.forecast-bars {
-  display: flex; align-items: flex-end;
-  gap: 4px; height: 80px;
-  padding: 0 2px;
-  margin-top: 10px;
-}
-
-.fb-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; }
-.fb-bar { width:100%; border-radius:2px 2px 0 0; transition: height 0.8s ease; min-height:2px; }
-.fb-lbl { font-family:var(--mono); font-size:7px; color:var(--t4); text-align:center; }
-
-/* ════════════════════ API TESTER ════════════════════ */
-.api-tester {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.endpoint-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.ep-tab {
-  padding: 9px 14px;
-  font-family: var(--mono); font-size: 9px;
-  color: var(--t3); letter-spacing: 0.08em;
-  cursor: pointer; border: none; background: transparent;
-  border-bottom: 2px solid transparent;
-  transition: all 0.15s; white-space: nowrap;
-}
-
-.ep-tab:hover { color: var(--t2); }
-.ep-tab.active { color: var(--teal); border-bottom-color: var(--teal); }
-
-.api-response {
-  padding: 14px;
-  font-family: var(--mono); font-size: 10px;
-  color: var(--t2); line-height: 1.7;
-  overflow: auto;
-  max-height: 280px;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.json-key    { color: var(--teal); }
-.json-str    { color: var(--green); }
-.json-num    { color: var(--amber); }
-.json-bool   { color: var(--purple); }
-.json-null   { color: var(--t3); }
-
-/* ════════════════════ RDT DEMO ════════════════════ */
-.rdt-form { display:flex; flex-direction:column; gap:10px; padding:14px; }
-
-.form-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-
-.form-field { display:flex; flex-direction:column; gap:4px; }
-
-.field-label {
-  font-family:var(--mono); font-size:8px;
-  color:var(--t3); letter-spacing:0.12em;
-  text-transform:uppercase;
-}
-
-.field-input {
-  background: rgba(0,0,0,0.3);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 7px 10px;
-  font-family: var(--mono); font-size: 11px;
-  color: var(--t1);
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-.field-input:focus { border-color: var(--teal); }
-
-.btn-compute {
-  padding: 10px 20px;
-  background: var(--teal);
-  color: var(--bg);
-  border: none; border-radius: 3px;
-  font-family: var(--mono); font-size: 10px;
-  font-weight: 600; letter-spacing: 0.12em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.btn-compute:hover { opacity: 0.85; }
-.btn-compute:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.rdt-result {
-  margin-top: 10px; padding: 12px;
-  background: rgba(0,0,0,0.25);
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  display: none;
-}
-
-/* ════════════════════ RDT GAUGE ════════════════════ */
-.rdt-summary {
-  display: grid; grid-template-columns: repeat(3,1fr);
-  gap: 8px; margin-top: 10px;
-}
-
-.rdt-metric {
-  padding: 10px 12px;
-  background: rgba(0,0,0,0.2);
-  border-radius: 4px;
-  text-align: center;
-}
-
-.rm-val {
-  font-family: var(--serif); font-size: 24px;
-  line-height: 1; margin-bottom: 3px;
-}
-
-.rm-label {
-  font-family: var(--mono); font-size: 8px;
-  color: var(--t3); letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-/* ════════════════════ STATUS TAGS ════════════════════ */
-.tag-critical { background:rgba(255,45,0,0.12); color:var(--heat-ext); border:1px solid rgba(255,45,0,0.2); }
-.tag-high     { background:rgba(245,166,35,0.1); color:var(--amber);    border:1px solid rgba(245,166,35,0.2); }
-.tag-medium   { background:rgba(255,214,0,0.1);  color:var(--yellow);   border:1px solid rgba(255,214,0,0.2); }
-.tag-low      { background:rgba(0,230,118,0.08); color:var(--green);    border:1px solid rgba(0,230,118,0.15); }
-.tag-minimal  { background:rgba(41,121,255,0.1); color:var(--blue);     border:1px solid rgba(41,121,255,0.2); }
-.tag-live     { background:rgba(0,230,118,0.1);  color:var(--green);    border:1px solid rgba(0,230,118,0.2); }
-
-/* ════════════════════ CHAIN PANEL ════════════════════ */
-.chain-stats {
-  display: grid; grid-template-columns: repeat(2,1fr);
-  gap: 8px;
-}
-
-.cs-item { padding:10px; background:rgba(0,0,0,0.2); border-radius:4px; text-align:center; }
-.cs-val { font-family:var(--mono); font-size:18px; font-weight:700; }
-.cs-label { font-family:var(--mono); font-size:8px; color:var(--t3); margin-top:3px; }
-
-/* ════════════════════ ERROR STATE ════════════════════ */
-.error-msg {
-  font-family: var(--mono); font-size: 10px;
-  color: var(--heat-ext); padding: 10px;
-  background: rgba(255,45,0,0.05);
-  border: 1px solid rgba(255,45,0,0.15);
-  border-radius: 4px;
-}
-
-/* ════════════════════ FOOTER ════════════════════ */
-.footer {
-  margin-top: 40px; padding: 16px 32px;
-  border-top: 1px solid var(--border);
-  display: flex; justify-content: space-between; align-items: center;
-}
-
-.footer-l { font-family:var(--mono); font-size:9px; color:var(--t4); line-height:1.8; }
-.footer-l span { color:var(--teal); }
-.footer-r { font-family:var(--serif); font-style:italic; font-size:13px; color:var(--t3); }
-
-/* ════════════════════ ANIMATIONS ════════════════════ */
-.fa  { animation: fadeUp 0.5s ease both; }
-.fa1 { animation-delay: 0.05s; }
-.fa2 { animation-delay: 0.12s; }
-.fa3 { animation-delay: 0.19s; }
-.fa4 { animation-delay: 0.26s; }
-.fa5 { animation-delay: 0.33s; }
-
-@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } }
-
-::-webkit-scrollbar { width:4px; height:4px; }
-::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:2px; }
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,188,212,.004) 3px,rgba(0,188,212,.004) 4px)}
+.glow{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 15% 8%,rgba(255,80,0,.07) 0,transparent 60%),
+             radial-gradient(ellipse 40% 50% at 85% 85%,rgba(0,188,212,.05) 0,transparent 60%)}
+.wrap{position:relative;z-index:1}
+
+/* NAV */
+nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+    padding:0 28px;height:52px;border-bottom:1px solid var(--hi);
+    background:rgba(4,8,16,.95);backdrop-filter:blur(20px);
+    position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-name{font-family:var(--serif);font-size:18px}
+.brand-name em{color:var(--o);font-style:normal}
+.brand-div{width:1px;height:20px;background:var(--hi)}
+.brand-sub{font-family:var(--mono);font-size:8px;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;line-height:1.5}
+.live-pill{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9px;letter-spacing:.12em}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--g);box-shadow:0 0 8px var(--g);animation:blink 1.8s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25;box-shadow:none}}
+.dot-text{color:var(--g)}
+.nav-r{display:flex;align-items:center;justify-content:flex-end;gap:14px}
+#clk{font-family:var(--mono);font-size:10px;color:var(--t3)}
+.badge{font-family:var(--mono);font-size:8px;padding:3px 9px;border-radius:2px;
+       background:rgba(0,188,212,.08);border:1px solid rgba(0,188,212,.2);color:var(--t);letter-spacing:.08em}
+
+/* HERO */
+.hero{padding:18px 28px;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;gap:28px;
+      background:linear-gradient(90deg,rgba(255,70,0,.07) 0,transparent 60%)}
+.hero-title{font-family:var(--serif);font-size:clamp(20px,3vw,34px);line-height:1.1;flex-shrink:0}
+.hero-title em{color:var(--o);font-style:italic}
+.hero-sub{flex:1;font-size:12px;color:var(--t2);line-height:1.6;
+          border-left:2px solid rgba(255,107,0,.3);padding-left:18px}
+.hero-sub strong{color:var(--t1)}
+
+/* MAIN */
+.main{padding:20px 28px;max-width:1440px;margin:0 auto}
+
+/* SECTION RULE */
+.sec{display:flex;align-items:center;gap:10px;margin:24px 0 12px;
+     padding-bottom:7px;border-bottom:1px solid var(--border)}
+.sec-tag{font-family:var(--mono);font-size:8px;padding:2px 8px;border-radius:2px;
+         letter-spacing:.12em;text-transform:uppercase;border:1px solid transparent}
+.tag-live{background:rgba(0,230,118,.1);color:var(--g);border-color:rgba(0,230,118,.2)}
+.tag-cdsp{background:rgba(0,188,212,.1);color:var(--t);border-color:rgba(0,188,212,.2)}
+.tag-rdt {background:rgba(245,166,35,.1);color:var(--amber);border-color:rgba(245,166,35,.2)}
+.tag-api {background:rgba(41,121,255,.1);color:var(--b);border-color:rgba(41,121,255,.2)}
+.tag-crit{background:rgba(255,45,0,.12);color:var(--r);border-color:rgba(255,45,0,.2)}
+.tag-hi  {background:rgba(245,166,35,.1);color:var(--amber);border-color:rgba(245,166,35,.2)}
+.tag-med {background:rgba(255,214,0,.1);color:var(--y);border-color:rgba(255,214,0,.2)}
+.tag-low {background:rgba(0,230,118,.08);color:var(--g);border-color:rgba(0,230,118,.15)}
+.tag-min {background:rgba(41,121,255,.1);color:var(--b);border-color:rgba(41,121,255,.2)}
+.sec-title{font-family:var(--mono);font-size:9px;color:var(--t2);letter-spacing:.1em;text-transform:uppercase}
+.sec-line{flex:1;height:1px;background:var(--border)}
+#climate-ts{font-family:var(--mono);font-size:8px;color:var(--t4);white-space:nowrap}
+
+/* CLIMATE GRID */
+.climate-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+@media(max-width:900px){.climate-row{grid-template-columns:repeat(3,1fr)}}
+.ctile{background:var(--card);border:1px solid var(--border);border-radius:5px;
+       padding:14px 12px;position:relative;overflow:hidden;transition:border-color .2s}
+.ctile:hover{border-color:var(--hi)}
+.ctile::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.ct-temp::before{background:var(--o)} .ct-aqi::before{background:var(--amber)}
+.ct-hum::before{background:var(--t)}  .ct-uv::before{background:var(--y)}
+.ct-rain::before{background:var(--b)} .ct-risk::before{background:var(--g)}
+.ct-ico{font-size:16px;margin-bottom:7px}
+.ct-val{font-family:var(--serif);font-size:26px;line-height:1;margin-bottom:2px}
+.ct-lbl{font-family:var(--mono);font-size:8px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
+.ct-src{font-family:var(--mono);font-size:8px;color:var(--t4)}
+
+/* LOADING */
+.ld{display:flex;align-items:center;justify-content:center;gap:10px;
+    padding:28px;font-family:var(--mono);font-size:10px;color:var(--t3);letter-spacing:.1em}
+.spin{width:16px;height:16px;border:2px solid var(--border);
+      border-top-color:var(--t);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err{font-family:var(--mono);font-size:10px;color:var(--r);padding:10px;
+     background:rgba(255,45,0,.05);border:1px solid rgba(255,45,0,.15);border-radius:4px}
+
+/* 3 COL */
+.tri{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:900px){.tri{grid-template-columns:1fr}}
+
+/* PANEL */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:5px;overflow:hidden}
+.ph{display:flex;align-items:center;justify-content:space-between;
+    padding:9px 12px;border-bottom:1px solid var(--border)}
+.ph-title{font-family:var(--mono);font-size:9px;color:var(--t2);letter-spacing:.1em;text-transform:uppercase}
+.ph-badge{font-family:var(--mono);font-size:8px;padding:2px 7px;border-radius:2px}
+.pb{padding:12px}
+
+/* DISEASE LIST */
+.dl{display:flex;flex-direction:column;gap:7px}
+.dr{display:flex;align-items:flex-start;gap:8px;padding:9px 10px;
+    border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.02)}
+.dr-ico{font-size:13px;margin-top:1px}
+.dr-body{flex:1}
+.dr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.dr-name{font-size:11px;font-weight:500;text-transform:capitalize}
+.dr-bar{height:3px;background:rgba(255,255,255,.05);border-radius:2px;margin-top:2px}
+.dr-fill{height:100%;border-radius:2px;transition:width 1.2s ease}
+.dr-meta{font-family:var(--mono);font-size:8px;color:var(--t4);margin-top:3px}
+
+/* VULN LIST */
+.vl{display:flex;flex-direction:column;gap:6px}
+.vr{display:flex;align-items:center;gap:8px;padding:7px 9px;
+    border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.02)}
+.vr-n{font-family:var(--serif);font-size:16px;color:var(--t4);flex-shrink:0;width:20px;line-height:1}
+.vr-inf{flex:1}
+.vr-nm{font-size:11px;font-weight:500;margin-bottom:2px}
+.vr-mt{font-family:var(--mono);font-size:8px;color:var(--t3)}
+.vr-sc{font-family:var(--mono);font-size:13px;font-weight:700;text-align:right}
+
+/* FORECAST CHART */
+.fc-bars{display:flex;align-items:flex-end;gap:3px;height:75px;padding:0 2px;margin-top:8px}
+.fc-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.fc-bar{width:100%;border-radius:2px 2px 0 0;transition:height .8s ease;min-height:2px}
+.fc-lbl{font-family:var(--mono);font-size:7px;color:var(--t4)}
+
+/* CHAIN */
+.chain-g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cg-i{padding:10px;background:rgba(0,0,0,.2);border-radius:4px;text-align:center}
+.cg-v{font-family:var(--mono);font-size:18px;font-weight:700}
+.cg-l{font-family:var(--mono);font-size:8px;color:var(--t3);margin-top:3px}
+
+/* RDT FORM */
+.rdt-form{display:flex;flex-direction:column;gap:9px;padding:12px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.ff{display:flex;flex-direction:column;gap:3px}
+.fl{font-family:var(--mono);font-size:8px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase}
+.fi{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:3px;
+    padding:6px 9px;font-family:var(--mono);font-size:10px;color:var(--t1);outline:none;transition:border-color .15s}
+.fi:focus{border-color:var(--t)}
+.fi-sel{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:3px;
+        padding:6px 9px;font-family:var(--mono);font-size:10px;color:var(--t1);outline:none;cursor:pointer}
+.btn{padding:9px 18px;background:var(--t);color:var(--bg);border:none;border-radius:3px;
+     font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.12em;
+     text-transform:uppercase;cursor:pointer;transition:opacity .15s}
+.btn:hover{opacity:.85} .btn:disabled{opacity:.4;cursor:not-allowed}
+.rdt-res{margin-top:8px;padding:10px;background:rgba(0,0,0,.25);border-radius:4px;
+         border:1px solid var(--border);display:none}
+.rdt-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
+.rm{padding:9px;background:rgba(0,0,0,.2);border-radius:3px;text-align:center}
+.rm-v{font-family:var(--serif);font-size:22px;line-height:1;margin-bottom:2px}
+.rm-l{font-family:var(--mono);font-size:7px;color:var(--t3);letter-spacing:.09em;text-transform:uppercase}
+.stage-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.sg{padding:7px;background:rgba(0,0,0,.15);border-radius:3px}
+.sg-l{font-family:var(--mono);font-size:7px;color:var(--t3);margin-bottom:3px;text-transform:uppercase}
+.sg-v{font-family:var(--mono);font-size:10px;font-weight:600}
+.instr{font-size:10px;color:var(--t2);line-height:1.7;margin-top:8px}
+.step{margin-bottom:4px;display:flex;gap:6px}
+.step-n{color:var(--t);font-family:var(--mono);flex-shrink:0}
+
+/* API EXPLORER */
+.ep-tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.ep-tab{padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--t3);
+        letter-spacing:.07em;cursor:pointer;border:none;background:transparent;
+        border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.ep-tab:hover{color:var(--t2)} .ep-tab.act{color:var(--t);border-bottom-color:var(--t)}
+.api-out{padding:12px;font-family:var(--mono);font-size:9px;color:var(--t2);
+         line-height:1.7;overflow:auto;max-height:260px;white-space:pre-wrap;word-break:break-all}
+.jk{color:var(--t)} .jv{color:var(--g)} .jn{color:var(--amber)} .jb{color:var(--p)} .jl{color:var(--t3)}
+
+footer{margin-top:36px;padding:14px 28px;border-top:1px solid var(--border);
+       display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.fl-t{font-family:var(--mono);font-size:8px;color:var(--t4);line-height:2}
+.fl-t span{color:var(--t)}
+.fr-t{font-family:var(--serif);font-style:italic;font-size:12px;color:var(--t3)}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.07);border-radius:2px}
+.fa{animation:fu .45s ease both}
+.fa1{animation-delay:.04s}.fa2{animation-delay:.1s}.fa3{animation-delay:.16s}
+.fa4{animation-delay:.22s}.fa5{animation-delay:.28s}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}}
 </style>
 </head>
 <body>
-<div class="ambient"></div>
-<div class="page">
+<div class="glow"></div>
+<div class="wrap">
 
-<!-- ── MASTHEAD ── -->
-<header class="masthead">
+<nav>
   <div class="brand">
-    <div class="brand-logo">COIP · <em>Climate</em></div>
-    <div class="brand-pipe"></div>
-    <div class="brand-sub">Guntur District<br>Andhra Pradesh · Live</div>
+    <div class="brand-name">COIP &middot; <em>Climate</em></div>
+    <div class="brand-div"></div>
+    <div class="brand-sub">Guntur District<br>Andhra Pradesh &middot; Live</div>
   </div>
-  <div class="live-indicator">
-    <div class="live-dot"></div>
-    <span class="live-text">API LIVE</span>
-    <span class="api-url">railway.app</span>
+  <div class="live-pill">
+    <div class="dot"></div>
+    <span class="dot-text">API LIVE</span>
   </div>
-  <div class="masthead-right">
-    <span id="clock"></span>
-    <span class="unicef-badge">UNICEF Ventures 2026</span>
+  <div class="nav-r">
+    <span id="clk"></span>
+    <span class="badge">UNICEF Ventures 2026</span>
   </div>
-</header>
+</nav>
 
-<!-- ── HERO ── -->
-<div class="hero-strip">
-  <div class="hero-title">
-    Compress the window.<br>
-    <em>Save the child.</em>
-  </div>
-  <div class="hero-spine">
+<div class="hero">
+  <div class="hero-title">Compress the window.<br><em>Save the child.</em></div>
+  <div class="hero-sub">
     Every minute a climate-stressed child waits for care is measurable.
     <strong>This dashboard reads live climate data from Guntur District in real-time,</strong>
-    computes child-specific biological urgency, and shows disease surge forecasts —
-    all from a deployed open-source API.
+    computes child-specific biological urgency, and shows disease surge forecasts
+    &mdash; all from a deployed open-source API.
   </div>
 </div>
 
 <div class="main">
 
-<!-- ══ SECTION 1: LIVE CLIMATE ══ -->
-<div class="section-rule fa fa1">
-  <span class="sr-tag tag-live" style="background:rgba(0,230,118,0.1);color:var(--green);">LIVE</span>
-  <span class="sr-title">Environmental Signals — Guntur District (Open-Meteo API, real-time)</span>
-  <div class="sr-line" style="height:1px;background:var(--border);"></div>
-  <span id="climate-ts" style="font-family:var(--mono);font-size:8px;color:var(--t4);white-space:nowrap;"></span>
+<!-- CLIMATE -->
+<div class="sec fa fa1">
+  <span class="sec-tag tag-live">LIVE</span>
+  <span class="sec-title">Environmental Signals &mdash; Guntur (Open-Meteo, real-time)</span>
+  <div class="sec-line"></div>
+  <span id="climate-ts"></span>
 </div>
 
-<div id="climate-loading" class="loading-overlay">
-  <div class="spin"></div> Fetching live climate data from Guntur…
+<div id="c-load" class="ld fa fa1"><div class="spin"></div>Fetching live Guntur climate data&hellip;</div>
+<div id="c-grid" class="climate-row" style="display:none">
+  <div class="ctile ct-temp"><div class="ct-ico">&#127777;&#65039;</div><div class="ct-val" id="cv-temp" style="color:var(--o)">--</div><div class="ct-lbl">Temperature</div><div class="ct-src" id="cv-src">--</div></div>
+  <div class="ctile ct-aqi"><div class="ct-ico">&#128168;</div><div class="ct-val" id="cv-aqi" style="color:var(--amber)">--</div><div class="ct-lbl">AQI</div><div class="ct-src">CPCB / OpenAQ</div></div>
+  <div class="ctile ct-hum"><div class="ct-ico">&#128167;</div><div class="ct-val" id="cv-hum" style="color:var(--t)">--</div><div class="ct-lbl">Humidity</div><div class="ct-src">Relative %</div></div>
+  <div class="ctile ct-uv"><div class="ct-ico">&#9728;&#65039;</div><div class="ct-val" id="cv-uv" style="color:var(--y)">--</div><div class="ct-lbl">UV Index</div><div class="ct-src">WHO scale</div></div>
+  <div class="ctile ct-rain"><div class="ct-ico">&#127783;&#65039;</div><div class="ct-val" id="cv-rain" style="color:var(--b)">--</div><div class="ct-lbl">Rainfall mm</div><div class="ct-src">Last hour</div></div>
+  <div class="ctile ct-risk"><div class="ct-ico">&#9888;&#65039;</div><div class="ct-val" id="cv-risk" style="font-family:var(--mono);font-size:16px;font-weight:700">--</div><div class="ct-lbl">Climate Risk</div><div class="ct-src" id="cv-hazard">--</div></div>
 </div>
 
-<div id="climate-grid" class="climate-row" style="display:none;">
-  <div class="climate-tile ct-temp">
-    <div class="ct-icon">🌡️</div>
-    <div class="ct-val" id="c-temp">—</div>
-    <div class="ct-label">Temperature</div>
-    <div class="ct-source" id="c-src">—</div>
-  </div>
-  <div class="climate-tile ct-aqi">
-    <div class="ct-icon">💨</div>
-    <div class="ct-val" id="c-aqi">—</div>
-    <div class="ct-label">AQI / PM2.5</div>
-    <div class="ct-source" id="c-aqi-src">India NAAQS</div>
-  </div>
-  <div class="climate-tile ct-humid">
-    <div class="ct-icon">💧</div>
-    <div class="ct-val" id="c-hum">—</div>
-    <div class="ct-label">Humidity</div>
-    <div class="ct-source">Relative %</div>
-  </div>
-  <div class="climate-tile ct-uv">
-    <div class="ct-icon">☀️</div>
-    <div class="ct-val" id="c-uv">—</div>
-    <div class="ct-label">UV Index</div>
-    <div class="ct-source">WHO scale</div>
-  </div>
-  <div class="climate-tile ct-rain">
-    <div class="ct-icon">🌧️</div>
-    <div class="ct-val" id="c-rain">—</div>
-    <div class="ct-label">Rainfall mm</div>
-    <div class="ct-source">Last hour</div>
-  </div>
-  <div class="climate-tile ct-risk">
-    <div class="ct-icon">⚠️</div>
-    <div class="ct-val" id="c-risk">—</div>
-    <div class="ct-label">Climate Risk</div>
-    <div class="ct-source" id="c-hazard">—</div>
-  </div>
+<!-- FORECASTS -->
+<div class="sec fa fa2">
+  <span class="sec-tag tag-cdsp">CDSP</span>
+  <span class="sec-title">Disease Surge Forecast &middot; School Vulnerability &middot; 48h Outlook</span>
+  <div class="sec-line"></div>
 </div>
 
-<!-- ══ SECTION 2: DISEASE + VULNERABILITY + FORECAST ══ -->
-<div class="section-rule fa fa2">
-  <span class="sr-tag" style="background:rgba(0,188,212,0.1);color:var(--teal);border:1px solid rgba(0,188,212,0.2);">CDSP</span>
-  <span class="sr-title">Disease Surge Forecast · School Vulnerability · 48h Outlook</span>
-  <div class="sr-line" style="height:1px;background:var(--border);"></div>
-</div>
-
-<div class="tri-grid fa fa2">
-
-  <!-- Disease forecast -->
+<div class="tri fa fa2">
   <div class="panel">
-    <div class="panel-head">
-      <span class="ph-title">🦠 Disease Surge Forecast</span>
-      <span id="d-alert" class="ph-badge">Loading…</span>
-    </div>
-    <div class="panel-body">
-      <div id="disease-loading" class="loading-overlay" style="padding:20px;">
-        <div class="spin"></div>
-      </div>
-      <div id="disease-list" class="disease-list" style="display:none;"></div>
+    <div class="ph"><span class="ph-title">&#129440; Disease Surge Forecast</span><span id="d-badge" class="ph-badge">--</span></div>
+    <div class="pb">
+      <div id="d-load" class="ld" style="padding:18px"><div class="spin"></div></div>
+      <div id="d-list" class="dl" style="display:none"></div>
     </div>
   </div>
-
-  <!-- School vulnerability -->
   <div class="panel">
-    <div class="panel-head">
-      <span class="ph-title">🏫 School Vulnerability</span>
-      <span id="sve-badge" class="ph-badge">Loading…</span>
-    </div>
-    <div class="panel-body">
-      <div id="sve-loading" class="loading-overlay" style="padding:20px;">
-        <div class="spin"></div>
-      </div>
-      <div id="vuln-list" class="vuln-list" style="display:none;"></div>
+    <div class="ph"><span class="ph-title">&#127979; School Vulnerability</span><span id="s-badge" class="ph-badge">--</span></div>
+    <div class="pb">
+      <div id="s-load" class="ld" style="padding:18px"><div class="spin"></div></div>
+      <div id="s-list" class="vl" style="display:none"></div>
     </div>
   </div>
-
-  <!-- 48h forecast chart -->
   <div class="panel">
-    <div class="panel-head">
-      <span class="ph-title">📈 48-Hour Temperature Forecast</span>
-      <span class="ph-badge tag-live">Open-Meteo</span>
-    </div>
-    <div class="panel-body">
-      <div id="fc-loading" class="loading-overlay" style="padding:20px;">
-        <div class="spin"></div>
-      </div>
-      <div id="forecast-area" style="display:none;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-          <span id="fc-min" style="font-family:var(--mono);font-size:9px;color:var(--t3);">min</span>
-          <span id="fc-max" style="font-family:var(--mono);font-size:9px;color:var(--heat-hi);">max</span>
+    <div class="ph"><span class="ph-title">&#128200; 48-Hour Temperature</span><span class="ph-badge tag-live">Open-Meteo</span></div>
+    <div class="pb">
+      <div id="f-load" class="ld" style="padding:18px"><div class="spin"></div></div>
+      <div id="f-area" style="display:none">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span id="f-min" style="font-family:var(--mono);font-size:9px;color:var(--t3)">min</span>
+          <span id="f-max" style="font-family:var(--mono);font-size:9px;color:var(--o)">max</span>
         </div>
-        <div id="forecast-bars" class="forecast-bars"></div>
-        <div style="margin-top:12px;padding:8px;background:rgba(0,0,0,0.2);border-radius:4px;">
-          <div style="font-family:var(--mono);font-size:8px;color:var(--t3);margin-bottom:4px;">HEATWAVE WINDOWS (≥40°C)</div>
-          <div id="hw-windows" style="font-family:var(--mono);font-size:9px;color:var(--heat-hi);"></div>
+        <div id="f-bars" class="fc-bars"></div>
+        <div style="margin-top:10px;padding:7px;background:rgba(0,0,0,.2);border-radius:4px">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--t3);margin-bottom:3px">HEATWAVE WINDOWS (&#8805;40&#176;C)</div>
+          <div id="f-hw" style="font-family:var(--mono);font-size:9px;color:var(--o)">--</div>
         </div>
       </div>
     </div>
   </div>
-
 </div>
 
-<!-- ══ SECTION 3: LIVE RDT DEMO ══ -->
-<div class="section-rule fa fa3">
-  <span class="sr-tag" style="background:rgba(245,166,35,0.1);color:var(--amber);border:1px solid rgba(245,166,35,0.2);">RDT ENGINE</span>
-  <span class="sr-title">Live Case Compute — POST to Deployed API</span>
-  <div class="sr-line" style="height:1px;background:var(--border);"></div>
+<!-- RDT COMPUTE -->
+<div class="sec fa fa3">
+  <span class="sec-tag tag-rdt">RDT Engine</span>
+  <span class="sec-title">Live Case Compute &mdash; POST to Deployed API</span>
+  <div class="sec-line"></div>
 </div>
 
-<div class="tri-grid fa fa3">
-
-  <div class="panel" style="grid-column:span 2;">
-    <div class="panel-head">
-      <span class="ph-title">⏱ Submit Case → Get Climate-Adjusted RDT Response</span>
-      <span class="ph-badge tag-live">LIVE API</span>
-    </div>
+<div class="tri fa fa3">
+  <div class="panel" style="grid-column:span 2">
+    <div class="ph"><span class="ph-title">&#9201; Submit Case &rarr; Climate-Adjusted RDT Response</span><span class="ph-badge tag-live">LIVE API</span></div>
     <div class="rdt-form">
-      <div class="form-row">
-        <div class="form-field">
-          <label class="field-label">Child Age (months)</label>
-          <input class="field-input" id="f-age" type="number" value="18" min="0" max="60">
-        </div>
-        <div class="form-field">
-          <label class="field-label">Child Weight (kg)</label>
-          <input class="field-input" id="f-wt" type="number" value="10.2" step="0.1">
+      <div class="fr">
+        <div class="ff"><label class="fl">Child Age (months)</label><input class="fi" id="r-age" type="number" value="18" min="0" max="60"></div>
+        <div class="ff"><label class="fl">Child Weight (kg)</label><input class="fi" id="r-wt" type="number" value="10.2" step="0.1"></div>
+      </div>
+      <div class="fr">
+        <div class="ff"><label class="fl">Temperature &#176;C</label><input class="fi" id="r-temp" type="number" value="42.0" step="0.1"></div>
+        <div class="ff"><label class="fl">AQI</label><input class="fi" id="r-aqi" type="number" value="95"></div>
+      </div>
+      <div class="fr">
+        <div class="ff"><label class="fl">Humidity %</label><input class="fi" id="r-hum" type="number" value="55"></div>
+        <div class="ff"><label class="fl">Language (CHW Instructions)</label>
+          <select class="fi-sel" id="r-lang"><option value="en">English</option><option value="te">Telugu</option><option value="hi">Hindi</option></select>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label class="field-label">Temperature °C</label>
-          <input class="field-input" id="f-temp" type="number" value="42.0" step="0.1">
-        </div>
-        <div class="form-field">
-          <label class="field-label">AQI</label>
-          <input class="field-input" id="f-aqi" type="number" value="95">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label class="field-label">Timestamp Reported</label>
-          <input class="field-input" id="f-ts" type="text" value="">
-        </div>
-        <div class="form-field">
-          <label class="field-label">Timestamp Acknowledged (optional)</label>
-          <input class="field-input" id="f-ack" type="text" placeholder="leave blank for pending">
-        </div>
-      </div>
-      <button class="btn-compute" id="btn-rdt">COMPUTE RDT →</button>
-
-      <div id="rdt-result" class="rdt-result">
-        <div class="rdt-summary" id="rdt-summary"></div>
-        <div style="margin-top:10px;">
-          <div style="font-family:var(--mono);font-size:8px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;">CHW Instructions</div>
-          <div id="rdt-instructions" style="font-size:11px;color:var(--t2);line-height:1.7;"></div>
-        </div>
+      <button class="btn" id="btn-rdt">COMPUTE RDT &#8594;</button>
+      <div id="rdt-res" class="rdt-res">
+        <div id="rdt-sum" class="rdt-sum"></div>
+        <div id="stage-row" class="stage-row"></div>
+        <div id="rdt-instr" class="instr"></div>
       </div>
     </div>
   </div>
 
-  <!-- Blockchain chain -->
   <div class="panel">
-    <div class="panel-head">
-      <span class="ph-title">⛓ Blockchain Attestation</span>
-      <span class="ph-badge" style="background:rgba(170,0,255,0.1);color:var(--purple);border:1px solid rgba(170,0,255,0.2);">SHA-256 Chain</span>
-    </div>
-    <div class="panel-body">
-      <div id="chain-loading" class="loading-overlay" style="padding:20px;">
-        <div class="spin"></div>
-      </div>
-      <div id="chain-stats" class="chain-stats" style="display:none;"></div>
-      <div id="chain-detail" style="margin-top:12px;font-family:var(--mono);font-size:9px;color:var(--t3);line-height:1.8;"></div>
+    <div class="ph"><span class="ph-title">&#9935; Blockchain Attestation</span><span class="ph-badge" style="background:rgba(170,0,255,.1);color:var(--p);border:1px solid rgba(170,0,255,.2)">SHA-256 Chain</span></div>
+    <div class="pb">
+      <div id="ch-load" class="ld" style="padding:18px"><div class="spin"></div></div>
+      <div id="ch-stats" class="chain-g" style="display:none"></div>
+      <div id="ch-detail" style="margin-top:10px;font-family:var(--mono);font-size:9px;color:var(--t3);line-height:1.8"></div>
     </div>
   </div>
-
 </div>
 
-<!-- ══ SECTION 4: API EXPLORER ══ -->
-<div class="section-rule fa fa4">
-  <span class="sr-tag" style="background:rgba(41,121,255,0.1);color:var(--blue);border:1px solid rgba(41,121,255,0.2);">API</span>
-  <span class="sr-title">Live API Explorer — All Endpoints</span>
-  <div class="sr-line" style="height:1px;background:var(--border);"></div>
+<!-- API EXPLORER -->
+<div class="sec fa fa4">
+  <span class="sec-tag tag-api">API</span>
+  <span class="sec-title">Live API Explorer &mdash; All Endpoints</span>
+  <div class="sec-line"></div>
 </div>
 
-<div class="api-tester fa fa4">
-  <div class="endpoint-tabs" id="ep-tabs">
-    <button class="ep-tab active" data-ep="/health">GET /health</button>
+<div class="panel fa fa4">
+  <div class="ep-tabs" id="ep-tabs">
+    <button class="ep-tab act" data-ep="/health">GET /health</button>
     <button class="ep-tab" data-ep="/climate/guntur">GET /climate/guntur</button>
     <button class="ep-tab" data-ep="/cdsp/forecast">GET /cdsp/forecast</button>
     <button class="ep-tab" data-ep="/sve/vulnerability">GET /sve/vulnerability</button>
     <button class="ep-tab" data-ep="/climate/forecast">GET /climate/forecast</button>
     <button class="ep-tab" data-ep="/chain/summary">GET /chain/summary</button>
-    <button class="ep-tab" data-ep="/geojson/hazard">GET /geojson/hazard</button>
     <button class="ep-tab" data-ep="/demo">GET /demo</button>
   </div>
-  <div class="api-response" id="api-response">
-    <span style="color:var(--t4);">Click an endpoint above to fetch live data from the deployed API…</span>
-  </div>
+  <div id="api-out" class="api-out"><span style="color:var(--t4)">Click an endpoint above to fetch live data&hellip;</span></div>
 </div>
 
 </div><!-- /main -->
 
-<footer class="footer">
-  <div class="footer-l">
-    <span>COIP-Climate</span> · Apache 2.0 · Open-Source · FHIR Compatible · DHIS2 Compatible<br>
-    API: <span>https://web-production-9e7cf.up.railway.app</span> · Guntur District · 29/29 tests passing
-  </div>
-  <div class="footer-r">Measure Time. Understand Biology. Compress the Window.</div>
+<footer>
+  <div class="fl-t"><span>COIP-Climate</span> v3.0 &middot; Apache 2.0 &middot; Open-Source &middot; FHIR &middot; DHIS2<br>Guntur District, Andhra Pradesh &middot; 29/29 tests passing &middot; UNICEF Ventures 2026</div>
+  <div class="fr-t">Measure Time. Understand Biology. Compress the Window.</div>
 </footer>
 
-</div><!-- /page -->
+</div>
 
 <script>
-const API = 'https://web-production-9e7cf.up.railway.app';
+// KEY FIX: use relative URLs — works on any domain (Railway, localhost, anywhere)
+// No hardcoded URL. The dashboard is served from the same server as the API.
+const API = '';
 
-// ── CLOCK
+// CLOCK
 (function tick(){
   const n=new Date();
-  document.getElementById('clock').textContent =
-    [n.getUTCHours(),n.getUTCMinutes(),n.getUTCSeconds()]
-    .map(v=>String(v).padStart(2,'0')).join(':') + ' UTC';
+  const el=document.getElementById('clk');
+  if(el) el.textContent=[n.getUTCHours(),n.getUTCMinutes(),n.getUTCSeconds()].map(v=>String(v).padStart(2,'0')).join(':')+'  UTC';
   setTimeout(tick,1000);
 })();
 
-// ── SET DEFAULT TIMESTAMP
-document.getElementById('f-ts').value = new Date().toISOString().slice(0,19)+'Z';
+// RISK HELPERS
+const RC={CRITICAL:'var(--r)',HIGH:'var(--amber)',MEDIUM:'var(--y)',LOW:'var(--g)',MINIMAL:'var(--b)'};
+const RK={CRITICAL:'tag-crit',HIGH:'tag-hi',MEDIUM:'tag-med',LOW:'tag-low',MINIMAL:'tag-min'};
+const riskColor=l=>RC[l]||'var(--t2)';
+const riskClass=l=>RK[l]||'';
 
-// ── RISK COLOR
-function riskColor(level) {
-  const m = {CRITICAL:'var(--heat-ext)',HIGH:'var(--amber)',
-             MEDIUM:'var(--yellow)',LOW:'var(--green)',MINIMAL:'var(--blue)'};
-  return m[level] || 'var(--t2)';
-}
-
-function riskClass(level) {
-  const m = {CRITICAL:'tag-critical',HIGH:'tag-high',
-             MEDIUM:'tag-medium',LOW:'tag-low',MINIMAL:'tag-minimal'};
-  return m[level] || '';
-}
-
-// ── PRETTY JSON
-function prettyJson(obj, indent=0) {
-  const sp = '  '.repeat(indent);
-  const sp2 = '  '.repeat(indent+1);
-  if (Array.isArray(obj)) {
-    if (obj.length === 0) return '[]';
-    const items = obj.map(v => sp2 + prettyJson(v, indent+1));
-    return '[\n' + items.join(',\n') + '\n' + sp + ']';
+// PRETTY JSON — Fixed to render newlines as <br> instead of literal \n
+function prettyJson(o,d=0){
+  const sp='  '.repeat(d),s2='  '.repeat(d+1);
+  if(Array.isArray(o)){
+    if(!o.length)return'[]';
+    const result='[\n'+o.map(v=>s2+prettyJson(v,d+1)).join(',\n')+'\n'+sp+']';
+    return result.replace(/\n/g,'<br>').replace(/ {2,}/g,m=>'&nbsp;'.repeat(m.length));
   }
-  if (typeof obj === 'object' && obj !== null) {
-    const entries = Object.entries(obj).map(([k,v]) => {
-      const key = `<span class="json-key">"${k}"</span>`;
-      return sp2 + key + ': ' + prettyJson(v, indent+1);
-    });
-    return '{\n' + entries.join(',\n') + '\n' + sp + '}';
+  if(o&&typeof o==='object'){
+    const e=Object.entries(o).map(([k,v])=>s2+`<span class=jk>"${k}"</span>: `+prettyJson(v,d+1));
+    const result='{\n'+e.join(',\n')+'\n'+sp+'}';
+    return result.replace(/\n/g,'<br>').replace(/ {2,}/g,m=>'&nbsp;'.repeat(m.length));
   }
-  if (typeof obj === 'string')  return `<span class="json-str">"${obj}"</span>`;
-  if (typeof obj === 'number')  return `<span class="json-num">${obj}</span>`;
-  if (typeof obj === 'boolean') return `<span class="json-bool">${obj}</span>`;
-  if (obj === null)             return `<span class="json-null">null</span>`;
-  return String(obj);
+  if(typeof o==='string')return`<span class=jv>"${o}"</span>`;
+  if(typeof o==='number')return`<span class=jn>${o}</span>`;
+  if(typeof o==='boolean')return`<span class=jb>${o}</span>`;
+  if(o===null)return`<span class=jl>null</span>`;
+  return String(o);
 }
 
-// ── FETCH WITH ERROR HANDLING
-async function apiFetch(endpoint) {
-  const r = await fetch(API + endpoint);
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();
-}
-
-// ══════════ 1. LOAD CLIMATE DATA ══════════
-async function loadClimate() {
-  try {
-    const d = await apiFetch('/climate/guntur');
-    const c = d.climate;
-
-    document.getElementById('climate-loading').style.display = 'none';
-    document.getElementById('climate-grid').style.display = 'grid';
-
-    document.getElementById('c-temp').textContent = c.temperature_c + '°';
-    document.getElementById('c-temp').style.color =
-      c.temperature_c >= 42 ? 'var(--heat-ext)' :
-      c.temperature_c >= 38 ? 'var(--heat-hi)' :
-      c.temperature_c >= 35 ? 'var(--amber)' : 'var(--green)';
-
-    document.getElementById('c-aqi').textContent = c.aqi;
-    document.getElementById('c-hum').textContent = c.humidity_pct + '%';
-    document.getElementById('c-uv').textContent = c.uv_index;
-    document.getElementById('c-rain').textContent = c.rainfall_mm;
-
-    const riskEl = document.getElementById('c-risk');
-    riskEl.textContent = c.climate_risk_level;
-    riskEl.style.color = riskColor(c.climate_risk_level);
-
-    document.getElementById('c-hazard').textContent = c.hazard_type || 'NONE';
-    document.getElementById('c-src').textContent = c.source;
-
-    const ts = new Date(c.timestamp);
-    document.getElementById('climate-ts').textContent =
-      'Updated ' + ts.toUTCString();
-
-    // Auto-fill RDT form with live temperature
-    document.getElementById('f-temp').value = c.temperature_c;
-    document.getElementById('f-aqi').value = Math.round(c.aqi);
-
-  } catch(e) {
-    document.getElementById('climate-loading').innerHTML =
-      `<div class="error-msg">Failed to load climate data: ${e.message}</div>`;
+// FETCH WRAPPER — relative URL, with timeout
+async function apiFetch(ep){
+  const ctrl=new AbortController();
+  const tid=setTimeout(()=>ctrl.abort(),15000);
+  try{
+    const r=await fetch(API+ep,{signal:ctrl.signal});
+    clearTimeout(tid);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  }catch(e){
+    clearTimeout(tid);
+    throw e;
   }
 }
 
-// ══════════ 2. DISEASE FORECAST ══════════
-async function loadDiseaseForecasts() {
-  try {
-    const d = await apiFetch('/cdsp/forecast');
-    document.getElementById('disease-loading').style.display = 'none';
-    const list = document.getElementById('disease-list');
-    list.style.display = 'flex';
+// SHOW/HIDE helpers
+const show=id=>{ const e=document.getElementById(id); if(e) e.style.display=''; };
+const hide=id=>{ const e=document.getElementById(id); if(e) e.style.display='none'; };
+const setStyle=(id,s,v)=>{ const e=document.getElementById(id); if(e) e.style[s]=v; };
+const setText=(id,t)=>{ const e=document.getElementById(id); if(e) e.textContent=t; };
+const setHTML=(id,h)=>{ const e=document.getElementById(id); if(e) e.innerHTML=h; };
 
-    const alertEl = document.getElementById('d-alert');
-    alertEl.textContent = d.district_alert || 'UNKNOWN';
-    alertEl.className = 'ph-badge ' + riskClass(d.district_alert);
+// ══ 1. CLIMATE ══
+async function loadClimate(){
+  try{
+    const d=await apiFetch('/climate/guntur');
+    const c=d.climate;
+    if(!c)throw new Error('No climate object in response');
 
-    const icons = {heat_illness:'🌡️',dengue:'🦟',diarrhea:'💧',malaria:'🦠',ari_respiratory:'🫁'};
-    const diseases = d.disease_forecasts || {};
+    hide('c-load');
+    setStyle('c-grid','display','grid');
 
-    for (const [name, fc] of Object.entries(diseases)) {
-      const row = document.createElement('div');
-      row.className = 'disease-row';
-      const score = Math.round((fc.risk_score || 0) * 100);
-      const barColor = riskColor(fc.risk_level);
-      row.innerHTML = `
-        <div class="dr-icon">${icons[name]||'🦠'}</div>
-        <div style="flex:1;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
-            <div class="dr-name">${name.replace('_',' ')}</div>
-            <span class="dr-level ${riskClass(fc.risk_level)}">${fc.risk_level}</span>
+    const tempColor=c.temperature_c>=42?'var(--r)':c.temperature_c>=38?'var(--o)':c.temperature_c>=35?'var(--amber)':'var(--g)';
+    const tempEl=document.getElementById('cv-temp');
+    if(tempEl){tempEl.textContent=c.temperature_c+'°';tempEl.style.color=tempColor;}
+    setText('cv-aqi',c.aqi);
+    setText('cv-hum',c.humidity_pct+'%');
+    setText('cv-uv',c.uv_index);
+    setText('cv-rain',c.rainfall_mm);
+
+    const riskEl=document.getElementById('cv-risk');
+    if(riskEl){riskEl.textContent=c.climate_risk_level||'--';riskEl.style.color=riskColor(c.climate_risk_level);}
+    setText('cv-hazard',c.hazard_type||'NONE');
+    setText('cv-src',c.source||'--');
+
+    if(c.timestamp){
+      const ts=new Date(c.timestamp);
+      setText('climate-ts','Updated '+ts.toUTCString());
+    }
+
+    // Auto-fill RDT form
+    const rt=document.getElementById('r-temp');
+    const ra=document.getElementById('r-aqi');
+    const rh=document.getElementById('r-hum');
+    if(rt)rt.value=c.temperature_c;
+    if(ra)ra.value=Math.round(c.aqi);
+    if(rh)rh.value=Math.round(c.humidity_pct);
+
+  }catch(e){
+    setHTML('c-load',`<div class=err>Climate error: ${e.message}</div>`);
+  }
+}
+
+// ══ 2. DISEASE FORECAST ══
+async function loadDisease(){
+  try{
+    const d=await apiFetch('/cdsp/forecast');
+    hide('d-load');
+    const list=document.getElementById('d-list');
+    if(!list)return;
+    list.style.display='flex';
+
+    const alert=d.district_alert||'UNKNOWN';
+    const badge=document.getElementById('d-badge');
+    if(badge){badge.textContent=alert;badge.className='ph-badge '+riskClass(alert);}
+
+    const icons={heat_illness:'🌡️',dengue:'🦟',diarrhea:'💧',malaria:'🦠',ari_respiratory:'🫁'};
+    const diseases=d.disease_forecasts||{};
+
+    for(const[name,fc]of Object.entries(diseases)){
+      if(!fc)continue;
+      const score=Math.round((fc.risk_score||0)*100);
+      const color=riskColor(fc.risk_level);
+      const row=document.createElement('div');
+      row.className='dr';
+      row.innerHTML=`
+        <div class="dr-ico">${icons[name]||'🦠'}</div>
+        <div class="dr-body">
+          <div class="dr-top">
+            <span class="dr-name">${name.replace(/_/g,' ')}</span>
+            <span class="ph-badge ${riskClass(fc.risk_level)}">${fc.risk_level||'--'}</span>
           </div>
-          <div class="dr-bar">
-            <div class="dr-bar-fill" style="width:${score}%;background:${barColor};"></div>
-          </div>
-          <div style="font-family:var(--mono);font-size:8px;color:var(--t4);margin-top:3px;">
-            ${fc.forecast_window||''}  ·  conf ${fc.confidence_pct||0}%
-          </div>
-        </div>
-      `;
+          <div class="dr-bar"><div class="dr-fill" style="width:${score}%;background:${color}"></div></div>
+          <div class="dr-meta">${fc.forecast_window||''} &middot; conf ${fc.confidence_pct||0}%</div>
+        </div>`;
       list.appendChild(row);
     }
-  } catch(e) {
-    document.getElementById('disease-loading').innerHTML =
-      `<div class="error-msg">Disease forecast error: ${e.message}</div>`;
+  }catch(e){
+    setHTML('d-load',`<div class=err>Disease forecast error: ${e.message}</div>`);
   }
 }
 
-// ══════════ 3. SCHOOL VULNERABILITY ══════════
-async function loadVulnerability() {
-  try {
-    const d = await apiFetch('/sve/vulnerability');
-    document.getElementById('sve-loading').style.display = 'none';
-    const list = document.getElementById('vuln-list');
-    list.style.display = 'flex';
+// ══ 3. SCHOOL VULNERABILITY ══
+async function loadVuln(){
+  try{
+    const d=await apiFetch('/sve/vulnerability');
+    hide('s-load');
+    const list=document.getElementById('s-list');
+    if(!list)return;
+    list.style.display='flex';
 
-    const badge = document.getElementById('sve-badge');
-    badge.textContent = `${d.critical_count || 0} CRITICAL`;
-    badge.className = 'ph-badge ' + (d.critical_count > 0 ? 'tag-critical' : 'tag-low');
+    const n=d.critical_count||0;
+    const badge=document.getElementById('s-badge');
+    if(badge){badge.textContent=n+' CRITICAL';badge.className='ph-badge '+(n>0?'tag-crit':'tag-low');}
 
-    const locs = (d.top_10_vulnerable || []).slice(0, 5);
-    locs.forEach((loc, i) => {
-      const row = document.createElement('div');
-      row.className = 'vuln-row';
-      const c = riskColor(loc.risk_level);
-      row.innerHTML = `
-        <div class="vr-rank">${i+1}</div>
-        <div class="vr-info">
-          <div class="vr-name">${loc.name.slice(0,32)}</div>
-          <div class="vr-meta">${loc.mandal || ''} · ${loc.children_at_risk || 0} children at risk</div>
+    (d.top_10_vulnerable||[]).slice(0,5).forEach((loc,i)=>{
+      const c=riskColor(loc.risk_level);
+      const row=document.createElement('div');
+      row.className='vr';
+      row.innerHTML=`
+        <div class="vr-n">${i+1}</div>
+        <div class="vr-inf">
+          <div class="vr-nm">${(loc.name||'').slice(0,32)}</div>
+          <div class="vr-mt">${loc.mandal||''} &middot; ${loc.children_at_risk||0} children</div>
         </div>
-        <div class="vr-score" style="color:${c};">
-          ${loc.vulnerability_score}<br>
-          <span class="dr-level ${riskClass(loc.risk_level)}" style="display:inline-block;margin-top:3px;">${loc.risk_level}</span>
-        </div>
-      `;
+        <div class="vr-sc" style="color:${c}">${loc.vulnerability_score||0}<br>
+          <span class="ph-badge ${riskClass(loc.risk_level)}" style="display:inline-block;margin-top:2px">${loc.risk_level||'--'}</span>
+        </div>`;
       list.appendChild(row);
     });
-  } catch(e) {
-    document.getElementById('sve-loading').innerHTML =
-      `<div class="error-msg">SVE error: ${e.message}</div>`;
+  }catch(e){
+    setHTML('s-load',`<div class=err>SVE error: ${e.message}</div>`);
   }
 }
 
-// ══════════ 4. 48H FORECAST CHART ══════════
-async function loadForecast() {
-  try {
-    const d = await apiFetch('/climate/forecast');
-    document.getElementById('fc-loading').style.display = 'none';
-    document.getElementById('forecast-area').style.display = 'block';
+// ══ 4. 48H FORECAST ══
+async function loadForecast(){
+  try{
+    const d=await apiFetch('/climate/forecast');
+    hide('f-load');
+    show('f-area');
 
-    const fc = (d.forecast || []).slice(0, 24); // 24 hours
-    if (!fc.length) return;
+    const fc=(d.forecast||[]).slice(0,24);
+    if(!fc.length){setHTML('f-hw','No forecast data');return;}
 
-    const temps = fc.map(f => f.temperature_c);
-    const minT = Math.min(...temps);
-    const maxT = Math.max(...temps);
-    const range = maxT - minT || 1;
+    const temps=fc.map(f=>f.temperature_c).filter(Boolean);
+    const minT=Math.min(...temps);
+    const maxT=Math.max(...temps);
+    const range=maxT-minT||1;
 
-    document.getElementById('fc-min').textContent = minT.toFixed(1) + '°C';
-    document.getElementById('fc-max').textContent = maxT.toFixed(1) + '°C';
+    setText('f-min',minT.toFixed(1)+'°C');
+    setText('f-max',maxT.toFixed(1)+'°C');
 
-    const container = document.getElementById('forecast-bars');
-    fc.forEach((f, i) => {
-      if (i % 3 !== 0) return; // show every 3rd hour
-      const pct = ((f.temperature_c - minT) / range) * 100;
-      const height = Math.max(4, pct * 0.7 + 10);
-      const color = f.temperature_c >= 40 ? 'var(--heat-ext)' :
-                    f.temperature_c >= 38 ? 'var(--heat-hi)' :
-                    f.temperature_c >= 35 ? 'var(--amber)' : 'var(--teal)';
-      const hour = f.time ? new Date(f.time).getUTCHours() : i;
-      const col = document.createElement('div');
-      col.className = 'fb-col';
-      col.innerHTML = `
-        <div class="fb-bar" style="height:${height}px;background:${color};"></div>
-        <div class="fb-lbl">${String(hour).padStart(2,'0')}h</div>
-      `;
-      container.appendChild(col);
-    });
-
-    // Heatwave windows
-    const hw = fc.filter(f => f.heatwave_risk);
-    const hwEl = document.getElementById('hw-windows');
-    if (hw.length) {
-      hwEl.textContent = `${hw.length} hours ≥40°C predicted — peak ${maxT.toFixed(1)}°C`;
-    } else {
-      hwEl.style.color = 'var(--green)';
-      hwEl.textContent = 'No heatwave window in next 24 hours';
+    const cont=document.getElementById('f-bars');
+    if(cont){
+      fc.forEach((f,i)=>{
+        if(i%3!==0)return;
+        const t=f.temperature_c||30;
+        const pct=((t-minT)/range)*100;
+        const h=Math.max(4,pct*0.65+8);
+        const color=t>=40?'var(--r)':t>=38?'var(--o)':t>=35?'var(--amber)':'var(--t)';
+        const hour=f.time?new Date(f.time).getUTCHours():i;
+        const col=document.createElement('div');
+        col.className='fc-col';
+        col.innerHTML=`<div class="fc-bar" style="height:${h}px;background:${color}"></div><div class="fc-lbl">${String(hour).padStart(2,'0')}h</div>`;
+        cont.appendChild(col);
+      });
     }
-  } catch(e) {
-    document.getElementById('fc-loading').innerHTML =
-      `<div class="error-msg">Forecast error: ${e.message}</div>`;
+
+    const hw=fc.filter(f=>f.heatwave_risk);
+    const hwEl=document.getElementById('f-hw');
+    if(hwEl){
+      if(hw.length){hwEl.textContent=hw.length+' hours ≥40°C — peak '+maxT.toFixed(1)+'°C';}
+      else{hwEl.style.color='var(--g)';hwEl.textContent='No heatwave in next 24 hours';}
+    }
+  }catch(e){
+    setHTML('f-load',`<div class=err>Forecast error: ${e.message}</div>`);
   }
 }
 
-// ══════════ 5. BLOCKCHAIN CHAIN ══════════
-async function loadChain() {
-  try {
-    const d = await apiFetch('/chain/summary');
-    document.getElementById('chain-loading').style.display = 'none';
-    const statsEl = document.getElementById('chain-stats');
-    statsEl.style.display = 'grid';
-
-    statsEl.innerHTML = `
-      <div class="cs-item">
-        <div class="cs-val" style="color:var(--purple);">${d.chain_length||0}</div>
-        <div class="cs-label">Blocks</div>
-      </div>
-      <div class="cs-item">
-        <div class="cs-val" style="color:var(--green);">${d.total_cases_attested||0}</div>
-        <div class="cs-label">Cases Attested</div>
-      </div>
-    `;
-
-    document.getElementById('chain-detail').innerHTML = `
-      Valid: <span style="color:var(--green);">${d.is_valid ? 'YES ✓' : 'NO ✗'}</span><br>
-      Latest: <span style="color:var(--teal);">${(d.latest_hash||'—').slice(0,20)}…</span><br>
-      Privacy: <span style="color:var(--t3);">${d.privacy_note||'Hashes only'}</span>
-    `;
-  } catch(e) {
-    document.getElementById('chain-loading').innerHTML =
-      `<div class="error-msg">Chain: ${e.message}</div>`;
+// ══ 5. BLOCKCHAIN ══
+async function loadChain(){
+  try{
+    const d=await apiFetch('/chain/summary');
+    hide('ch-load');
+    const stats=document.getElementById('ch-stats');
+    if(stats){
+      stats.style.display='grid';
+      stats.innerHTML=`
+        <div class="cg-i"><div class="cg-v" style="color:var(--p)">${d.chain_length||0}</div><div class="cg-l">Blocks</div></div>
+        <div class="cg-i"><div class="cg-v" style="color:var(--g)">${d.total_cases_attested||0}</div><div class="cg-l">Cases Attested</div></div>`;
+    }
+    setHTML('ch-detail',
+      `Valid: <span style="color:var(--g)">${d.is_valid?'YES ✓':'NO ✗'}</span><br>`+
+      `Hash: <span style="color:var(--t)">${(d.latest_hash||'—').slice(0,18)}…</span><br>`+
+      `<span style="color:var(--t4)">${d.privacy_note||''}</span>`
+    );
+  }catch(e){
+    setHTML('ch-load',`<div class=err>Chain: ${e.message}</div>`);
   }
 }
 
-// ══════════ 6. RDT COMPUTE ══════════
-document.getElementById('btn-rdt').addEventListener('click', async () => {
-  const btn = document.getElementById('btn-rdt');
-  btn.disabled = true;
-  btn.textContent = 'COMPUTING…';
+// ══ 6. RDT COMPUTE ══
+document.getElementById('btn-rdt').addEventListener('click',async()=>{
+  const btn=document.getElementById('btn-rdt');
+  btn.disabled=true;btn.textContent='COMPUTING…';
 
-  const now = new Date().toISOString();
-  const ackOffset = 12; // simulate 12 min acknowledge time
-  const ackTime = new Date(Date.now() - ackOffset * 60000).toISOString();
+  const now=new Date().toISOString();
+  const age=parseInt(document.getElementById('r-age').value)||18;
+  const wt=parseFloat(document.getElementById('r-wt').value)||10.2;
+  const temp=parseFloat(document.getElementById('r-temp').value)||42.0;
+  const aqi=parseFloat(document.getElementById('r-aqi').value)||95.0;
+  const hum=parseFloat(document.getElementById('r-hum').value)||55.0;
+  const lang=document.getElementById('r-lang').value||'en';
 
-  const body = {
-    child_age_months: parseInt(document.getElementById('f-age').value) || 18,
-    child_weight_kg:  parseFloat(document.getElementById('f-wt').value) || 10.2,
-    temperature_c:    parseFloat(document.getElementById('f-temp').value) || 42.0,
-    aqi:              parseFloat(document.getElementById('f-aqi').value) || 95.0,
-    humidity_pct:     55.0,
-    bus_score:        75.0,
-    cif_score:        0.42,
-    ts_reported:      document.getElementById('f-ts').value || now,
-    ts_acknowledged:  document.getElementById('f-ack').value || ackTime,
-    climate_pathway:  'HEAT_DIRECT',
-    mandal:           'Tadikonda',
-    village:          'Rentachintala',
-    chw_id:           'ASHA-GNT-UI-DEMO',
+  // Simulate a 12-minute acknowledge delay
+  const ackTime=new Date(Date.now()-12*60000).toISOString();
+
+  const payload={
+    child_age_months:age,child_weight_kg:wt,
+    temperature_c:temp,aqi:aqi,humidity_pct:hum,
+    bus_score:0,cif_score:Math.max(0,(temp-30)*0.035),
+    ts_reported:new Date(Date.now()-20*60000).toISOString(),
+    ts_acknowledged:ackTime,
+    climate_pathway:'HEAT_DIRECT',
+    mandal:'Tadikonda',village:'Rentachintala',chw_id:'ASHA-GNT-DEMO'
   };
 
-  try {
-    const r = await fetch(API + '/rdt/compute', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(body),
+  try{
+    const r=await fetch(API+'/rdt/compute',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
     });
-    const d = await r.json();
-    const rdt = d.rdt;
-    const instr = d.chw_instructions;
+    const d=await r.json();
+    const rdt=d.rdt;
+    const instr=d.chw_instructions;
+    const stages=d.stage_breakdown||{};
 
-    const resultEl = document.getElementById('rdt-result');
-    resultEl.style.display = 'block';
+    if(!rdt){throw new Error(d.message||'No RDT in response');}
 
-    const delayColor = rdt.delay_class === 'EMERGENCY' ? 'var(--heat-ext)' :
-                       rdt.delay_class === 'CRITICAL'  ? 'var(--heat-hi)' :
-                       rdt.delay_class === 'DELAYED'   ? 'var(--amber)' :
-                       rdt.delay_class === 'MODERATE'  ? 'var(--yellow)' : 'var(--green)';
+    const resEl=document.getElementById('rdt-res');
+    if(resEl)resEl.style.display='block';
 
-    document.getElementById('rdt-summary').innerHTML = `
-      <div class="rdt-metric">
-        <div class="rm-val" style="color:var(--amber);">${rdt.total_rdt_min||'—'}<span style="font-size:12px;">m</span></div>
-        <div class="rm-label">Total RDT</div>
-      </div>
-      <div class="rdt-metric">
-        <div class="rm-val" style="color:var(--teal);">${rdt.t_adj_total||'—'}<span style="font-size:12px;">m</span></div>
-        <div class="rm-label">T_adj Target</div>
-      </div>
-      <div class="rdt-metric">
-        <div class="rm-val" style="color:${delayColor};">${rdt.delay_class||'—'}</div>
-        <div class="rm-label">Classification</div>
-      </div>
-    `;
+    const dc=rdt.delay_class||'--';
+    const dcColor=dc==='EMERGENCY'?'var(--r)':dc==='CRITICAL'?'var(--o)':dc==='DELAYED'?'var(--amber)':dc==='MODERATE'?'var(--y)':'var(--g)';
 
-    if (instr) {
-      const steps = (instr.steps||[]).map((s,i) =>
-        `<div style="margin-bottom:5px;"><span style="color:var(--teal);font-family:var(--mono);">${i+1}.</span> ${s}</div>`
-      ).join('');
-      document.getElementById('rdt-instructions').innerHTML = `
-        <div style="font-family:var(--mono);font-size:9px;color:var(--teal);margin-bottom:6px;">
-          BUS=${rdt.bus_score} · T_adj=${rdt.t_adj_total}min · deviation=${rdt.deviation_pct>0?'+':''}${rdt.deviation_pct}%
+    setHTML('rdt-sum',`
+      <div class="rm"><div class="rm-v" style="color:var(--amber)">${rdt.total_rdt_min||'--'}<span style="font-size:11px">m</span></div><div class="rm-l">Total RDT</div></div>
+      <div class="rm"><div class="rm-v" style="color:var(--t)">${rdt.t_adj_total||'--'}<span style="font-size:11px">m</span></div><div class="rm-l">T_adj Target</div></div>
+      <div class="rm"><div class="rm-v" style="color:${dcColor}">${dc}</div><div class="rm-l">Classification</div></div>
+    `);
+
+    // Stage breakdown
+    const stageHTML=Object.entries(stages).map(([s,v])=>`
+      <div class="sg">
+        <div class="sg-l">${s} · ${v.meaning||''}</div>
+        <div class="sg-v" style="color:${v.status==='ON_TIME'?'var(--g)':v.status==='SLA_BREACH'?'var(--r)':'var(--amber)'}">
+          ${v.actual||0}m vs ${v.target||0}m (${v.deviation_pct>0?'+':''}${v.deviation_pct||0}%)
+        </div>
+      </div>`).join('');
+    setHTML('stage-row',stageHTML);
+
+    // CHW Instructions (multilingual)
+    // Fetch multilingual version if not English
+    let instrHTML='';
+    if(lang!=='en'){
+      try{
+        const mlRes=await fetch(API+'/rdt/multilingual',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({language:lang,protocol_type:'heat',child_age_months:age,
+            child_weight_kg:wt,bus_score:rdt.bus_score||50,t_adj_min:rdt.t_adj_total||25,
+            urgency_level:dc,hci_score:(rdt.cif_score||0)*100})
+        });
+        const mlData=await mlRes.json();
+        if(mlData.content){
+          instrHTML=`<div style="margin-bottom:6px;font-family:var(--mono);font-size:8px;color:var(--t3)">${mlData.language_name||lang} · ${mlData.complexity_mode||''}</div>`+
+                    `<div style="white-space:pre-wrap;line-height:1.8">${mlData.content}</div>`;
+        }
+      }catch(_){}
+    }
+    if(!instrHTML && instr){
+      const steps=(instr.steps||[]).map((s,i)=>`<div class="step"><span class="step-n">${i+1}.</span>${s}</div>`).join('');
+      instrHTML=`
+        <div style="font-family:var(--mono);font-size:8px;color:var(--t);margin-bottom:6px">
+          BUS=${rdt.bus_score||'--'} · T_adj=${rdt.t_adj_total||'--'}min · dev=${rdt.deviation_pct>0?'+':''}${rdt.deviation_pct||0}%
+          · bottleneck=${rdt.bottleneck||'NONE'}
         </div>
         ${steps}
-        ${instr.escalation ? `<div style="margin-top:6px;color:var(--heat-hi);">⚠ ${instr.escalation}</div>` : ''}
-        ${instr.not_your_fault ? `<div style="margin-top:6px;color:var(--t3);font-style:italic;">${instr.not_your_fault}</div>` : ''}
+        ${instr.escalation?`<div style="margin-top:6px;color:var(--r)">⚠ ${instr.escalation}</div>`:''}
+        ${instr.not_your_fault?`<div style="margin-top:5px;color:var(--t3);font-style:italic">${instr.not_your_fault}</div>`:''}
       `;
     }
-  } catch(e) {
-    document.getElementById('rdt-result').style.display = 'block';
-    document.getElementById('rdt-result').innerHTML =
-      `<div class="error-msg">RDT compute failed: ${e.message}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'COMPUTE RDT →';
+    setHTML('rdt-instr',instrHTML);
+
+  }catch(e){
+    const resEl=document.getElementById('rdt-res');
+    if(resEl){resEl.style.display='block';resEl.innerHTML=`<div class=err>RDT error: ${e.message}</div>`;}
+  }finally{
+    btn.disabled=false;btn.textContent='COMPUTE RDT →';
   }
 });
 
-// ══════════ 7. API EXPLORER TABS ══════════
-document.getElementById('ep-tabs').addEventListener('click', async (e) => {
-  const tab = e.target.closest('.ep-tab');
-  if (!tab) return;
-
-  document.querySelectorAll('.ep-tab').forEach(t => t.classList.remove('active'));
-  tab.classList.add('active');
-
-  const ep = tab.dataset.ep;
-  const responseEl = document.getElementById('api-response');
-  responseEl.innerHTML = `<span style="color:var(--t4);">Fetching ${API}${ep}…</span>`;
-
-  try {
-    const d = await apiFetch(ep);
-    responseEl.innerHTML = prettyJson(d);
-  } catch(e) {
-    responseEl.innerHTML = `<span class="json-key">"error"</span>: <span class="json-str">"${e.message}"</span>`;
+// ══ 7. API EXPLORER ══
+document.getElementById('ep-tabs').addEventListener('click',async e=>{
+  const tab=e.target.closest('.ep-tab');
+  if(!tab)return;
+  document.querySelectorAll('.ep-tab').forEach(t=>t.classList.remove('act'));
+  tab.classList.add('act');
+  const ep=tab.dataset.ep;
+  const out=document.getElementById('api-out');
+  if(out)out.innerHTML=`<span style="color:var(--t4)">Fetching ${ep}…</span>`;
+  try{
+    const d=await apiFetch(ep);
+    if(out)out.innerHTML=prettyJson(d);
+  }catch(e){
+    if(out)out.innerHTML=`<span class=err>Error: ${e.message}</span>`;
   }
 });
 
-// ══════════ INIT: LOAD ALL DATA ══════════
-(async function init() {
+// ══ INIT ══
+(async()=>{
   await loadClimate();
-  loadDiseaseForecasts();
-  loadVulnerability();
+  loadDisease();
+  loadVuln();
   loadForecast();
   loadChain();
-
-  // Auto-refresh climate every 5 minutes
-  setInterval(loadClimate, 5 * 60 * 1000);
-
-  // Trigger first API tab
-  setTimeout(() => {
-    document.querySelector('.ep-tab[data-ep="/health"]').click();
-  }, 500);
+  setInterval(loadClimate, 5*60*1000);
+  setTimeout(()=>{
+    const h=document.querySelector('.ep-tab[data-ep="/health"]');
+    if(h)h.click();
+  },800);
 })();
 </script>
 </body>

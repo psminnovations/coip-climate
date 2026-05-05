@@ -42,11 +42,33 @@ PORT    = int(os.environ.get("PORT", 8000))
 VERSION = "3.0.0"
 
 # ──────────────────────────────────────────────────────────────
-# DASHBOARD HTML — embedded directly, zero file dependency
-# Key fix: uses window.location.origin for API base URL
-# so it works on ANY domain — Railway, Render, localhost
+# LOAD DASHBOARD HTML from file
 # ──────────────────────────────────────────────────────────────
-DASHBOARD_HTML = """<!DOCTYPE html>
+def _load_dashboard_html():
+    """Load dashboard HTML from index.html file"""
+    dashboard_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        'dashboard', 'index.html'
+    )
+    try:
+        with open(dashboard_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except Exception as e:
+        log.error(f"Failed to load dashboard HTML: {e}")
+        return """<!DOCTYPE html>
+<html>
+<head><title>Error</title></head>
+<body><h1>Dashboard not found</h1><p>Could not load dashboard from {dashboard_path}</p></body>
+</html>"""
+
+def get_dashboard_html():
+    """Cached dashboard HTML getter"""
+    if not hasattr(get_dashboard_html, '_cache'):
+        get_dashboard_html._cache = _load_dashboard_html()
+    return get_dashboard_html._cache
+
+# This marker is used to identify where the old embedded HTML was
+_DASHBOARD_PLACEHOLDER = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -816,7 +838,7 @@ class COIPHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path.rstrip("/") or "/"
         try:
             if path == "/":
-                self._send_html(DASHBOARD_HTML)
+                self._send_html(get_dashboard_html())
 
             elif path == "/health":
                 self._send({"status":"ok","version":VERSION,"healthy":True,
