@@ -338,8 +338,46 @@ def get_48h_forecast(lat: float = GUNTUR_LAT,
             })
         return forecasts
     except Exception as e:
-        print(f"  [ESI] Forecast fetch failed: {e}")
-        return []
+        print(f"  [ESI] Forecast fetch failed: {e} — using synthetic forecast")
+        return _synthetic_forecast()
+
+
+def _synthetic_forecast() -> list:
+    """
+    Synthetic 48-hour forecast for Guntur based on historical patterns.
+    Used when Open-Meteo API is unavailable (network blocked, offline, etc).
+    Generates realistic diurnal (day/night) temperature cycle.
+    """
+    import math
+    month = datetime.now().month
+    monthly_base = {
+        1:30.3, 2:33.6, 3:37.0, 4:39.5, 5:41.9,
+        6:37.5, 7:34.5, 8:33.6, 9:32.7, 10:31.5, 11:30.2, 12:29.7
+    }
+    base_temp = monthly_base.get(month, 35.0)
+    monthly_rain = {7:35, 8:38, 9:44, 10:30, 6:8}
+
+    forecasts = []
+    base_time = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+
+    for i in range(48):
+        hour = (base_time.hour + i) % 24
+        # Diurnal cycle: coolest at 5am, hottest at 2pm
+        diurnal = -3.5 * math.cos(2 * math.pi * (hour - 14) / 24)
+        temp = round(base_temp + diurnal, 1)
+        rain = monthly_rain.get(month, 0) / 30.0 if hour in [15, 16, 17, 18] else 0.0
+        uv = max(0, 11 * math.sin(math.pi * (hour - 6) / 12)) if 6 <= hour <= 18 else 0.0
+
+        forecasts.append({
+            "time":          (base_time.replace(tzinfo=None) +
+                              __import__('datetime').timedelta(hours=i)).strftime('%Y-%m-%dT%H:%M'),
+            "temperature_c": temp,
+            "rainfall_mm":   round(rain, 1),
+            "uv_index":      round(uv, 1),
+            "heatwave_risk": temp >= 40.0,
+            "source":        "synthetic-guntur-historical",
+        })
+    return forecasts
 
 
 if __name__ == "__main__":

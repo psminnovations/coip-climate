@@ -64,9 +64,60 @@
         "bus_score": 50.0,
         "outcome": "ORS_HOME"
       }
+    },
+    {
+      "index": 4,
+      "case_id": "TEST-UI-001",
+      "case_hash": "73c52282f20e542a9c372fc2c83dc017d9ff0bd9412a6bb38c0881cd5b965222",
+      "previous_hash": "671026bfa22605525726f6769e21ce849e0ea2259707d93f5068e4662b3e39f0",
+      "timestamp": "2026-05-10T05:11:52.052816+00:00",
+      "block_hash": "1cc4bc1cce962853b181d1f2c99119467e620cf5796f7006a70217bbb20f360e",
+      "attestation_data": {
+        "district": "Guntur",
+        "mandal": "Tadikonda",
+        "month": 5,
+        "climate_pathway": "HEAT_DIRECT",
+        "risk_level": "DELAYED",
+        "bus_score": 70.0,
+        "outcome": "FACILITY"
+      }
+    },
+    {
+      "index": 5,
+      "case_id": "UIFIX-001",
+      "case_hash": "28f7cab06564c351228cabc6926c9571dcffb4e145d24bb4cf3b9013b55d9fa3",
+      "previous_hash": "1cc4bc1cce962853b181d1f2c99119467e620cf5796f7006a70217bbb20f360e",
+      "timestamp": "2026-05-10T09:54:21.555395+00:00",
+      "block_hash": "2d8cedebb9075901b393ee355fe7b36826fede80f3a4bdc3415d75326ccf0aa3",
+      "attestation_data": {
+        "district": "Guntur",
+        "mandal": "Tadikonda",
+        "month": 5,
+        "climate_pathway": "HEAT_DIRECT",
+        "risk_level": "DELAYED",
+        "bus_score": 70.0,
+        "outcome": "FACILITY"
+      }
+    },
+    {
+      "index": 6,
+      "case_id": "TEST-FINAL",
+      "case_hash": "286f0b6e3c782003e6b55ed5ddd3bf9127ebe6cddf3ae42acdb16bc12351711a",
+      "previous_hash": "2d8cedebb9075901b393ee355fe7b36826fede80f3a4bdc3415d75326ccf0aa3",
+      "timestamp": "2026-05-10T09:55:22.980256+00:00",
+      "block_hash": "802290a4d7b4458ca99f6b000ea7c48c35e8321a692538ece4009e9b849c14f8",
+      "attestation_data": {
+        "district": "Guntur",
+        "mandal": "X",
+        "month": 5,
+        "climate_pathway": "HEAT_DIRECT",
+        "risk_level": "DELAYED",
+        "bus_score": 70.0,
+        "outcome": "FACILITY"
+      }
     }
   ],
-  "length": 4,
-  "last_updated": "2026-05-04T06:06:27.920031+00:00",
+  "length": 7,
+  "last_updated": "2026-05-10T09:55:22.980334+00:00",
   "district": "Guntur, Andhra Pradesh"
 }

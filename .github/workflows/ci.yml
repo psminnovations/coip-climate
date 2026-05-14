@@ -1,0 +1,116 @@
+name: COIP-Climate CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Run 29 unit tests
+      run: python3 tests/test_core.py
+
+    - name: Test RDT v2 deviation formula
+      run: |
+        python3 -c "
+import sys; sys.path.insert(0,'.')
+from core.rdt.rdt_engine import CaseRDT, run_rdt_pipeline
+from datetime import datetime, timedelta, timezone
+base = datetime(2026,5,3,9,14,tzinfo=timezone.utc)
+iso = lambda d: d.isoformat()
+c = CaseRDT('T',18,10.2,'heat','X','Y','Z',42.0,95.0,55.0,75.0,0.42,
+    iso(base),iso(base+timedelta(minutes=18)),iso(base+timedelta(minutes=43)),
+    iso(base+timedelta(minutes=93)),climate_pathway='HEAT_DIRECT')
+c = run_rdt_pipeline(c)
+expected_pct = round((c.deviation/c.t_adj_total)*100,1)
+assert c.deviation_pct == expected_pct, f'deviation_pct {c.deviation_pct} != {expected_pct}'
+assert c.bottleneck != 'NONE'
+bad=CaseRDT('B',18,10.2,'h','X','Y','Z',38.0,60.0,60.0,40.0,0.2,iso(base),
+    ts_acknowledged=iso(base-timedelta(minutes=5)),climate_pathway='HEAT_DIRECT')
+bad=run_rdt_pipeline(bad)
+assert bad.rt_min == 0.0 and bad.data_quality == 'ERROR'
+print('RDT v2 all checks passed')
+"
+
+    - name: Test BCAL chain reload fix
+      run: |
+        python3 -c "
+import sys, os; sys.path.insert(0,'.')
+os.makedirs('data/exports',exist_ok=True)
+cf='data/exports/ci_chain.json'
+if os.path.exists(cf): os.remove(cf)
+from core.albe.bcal import COIPChain, Block
+c=COIPChain.__new__(COIPChain); c.chain_file=cf; c.chain=[]; c._create_genesis()
+c.attest_case({'case_id':'C1','child_age_months':18,'symptom':'f','ts_reported':'2026-05-01T10:00:00+00:00','total_rdt_min':30.0,'delay_class':'NORMAL','outcome':'ORS','climate_pathway':'HEAT_DIRECT','bus_score':50.0,'mandal':'X','month':5})
+c2=COIPChain.__new__(COIPChain); c2.chain_file=cf; c2.chain=[]; c2._load_or_create()
+assert len(c2.chain)==2, f'Reload got {len(c2.chain)} blocks expected 2'
+assert c2._is_valid()
+print(f'BCAL reload OK: {len(c2.chain)} blocks')
+"
+
+    - name: Test 4-disease forecast including malaria
+      run: |
+        python3 -c "
+import sys; sys.path.insert(0,'.')
+from core.cdsp.cdsp import run_district_forecast
+r=run_district_forecast(42.0,90.0,55.0,5.0,43.0,current_month=5)
+for d in ['heat_illness','dengue','diarrhea','malaria']:
+    assert d in r['disease_forecasts'], f'{d} missing'
+print('4 diseases OK:', list(r['disease_forecasts'].keys()))
+"
+
+    - name: Test SVE CRITICAL threshold
+      run: |
+        python3 -c "
+import sys; sys.path.insert(0,'.')
+from core.cdsp.sve import run_vulnerability_assessment
+r=run_vulnerability_assessment(42.0,90.0)
+assert r['critical_count']>0, 'Schools should be CRITICAL at 42C'
+print(f'SVE: {r[\"critical_count\"]} CRITICAL schools OK')
+"
+
+    - name: Test Telugu multilingual
+      run: |
+        python3 -c "
+import sys; sys.path.insert(0,'.')
+from core.albe.mlle import TranscreationEngine
+e=TranscreationEngine('te')
+p=e.phrase('heat_give_ors','te')
+assert len(p)>5 and 'ORS' in p
+print(f'Telugu OK: {p}')
+"
+
+    - name: Test API server
+      run: |
+        python3 -c "
+import sys,os,threading,time,json,urllib.request
+sys.path.insert(0,'.')
+os.environ['PORT']='19876'
+import api.server as srv; srv.PORT=19876
+threading.Thread(target=srv.main,daemon=True).start()
+time.sleep(2)
+for ep in ['/health','/demo']:
+    r=urllib.request.urlopen(f'http://localhost:19876{ep}',timeout=5)
+    d=json.loads(r.read())
+    print(f'{ep}: {d[\"status\"]}')
+"
+
+    - name: Generate and validate pilot data
+      run: python3 data/synthetic/case_generator.py

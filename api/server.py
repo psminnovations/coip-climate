@@ -30,10 +30,28 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # DB init
 from data.db import (init_db, save_case, get_district_cases,
-                     log_climate, compute_and_save_summary, get_db_stats)
+                     log_climate, compute_and_save_summary, get_db_stats,
+                     seed_from_csv, get_db_stats)
 _DB = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                    'data', 'coip_climate.db')
 init_db(_DB)
+
+# Seed pilot data if DB is empty (first deploy on Railway)
+def _maybe_seed():
+    stats = get_db_stats(_DB)
+    if stats.get('cases', 0) == 0:
+        csv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                'data', 'guntur', 'cases_baseline.csv')
+        if os.path.exists(csv_path):
+            n = seed_from_csv(csv_path, _DB)
+            compute_and_save_summary(_DB)   # pre-compute evidence
+            print(f"[DB] Seeded {n} Guntur pilot cases + computed evidence summary")
+        else:
+            print("[DB] No CSV found — DB will populate from live API calls")
+    else:
+        print(f"[DB] {stats['cases']} cases already in DB")
+
+_maybe_seed()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 log = logging.getLogger("coip")
@@ -42,33 +60,11 @@ PORT    = int(os.environ.get("PORT", 8000))
 VERSION = "3.0.0"
 
 # ──────────────────────────────────────────────────────────────
-# LOAD DASHBOARD HTML from file
+# DASHBOARD HTML — embedded directly, zero file dependency
+# Key fix: uses window.location.origin for API base URL
+# so it works on ANY domain — Railway, Render, localhost
 # ──────────────────────────────────────────────────────────────
-def _load_dashboard_html():
-    """Load dashboard HTML from index.html file"""
-    dashboard_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        'dashboard', 'index.html'
-    )
-    try:
-        with open(dashboard_path, 'r', encoding='utf-8') as f:
-            return f.read()
-    except Exception as e:
-        log.error(f"Failed to load dashboard HTML: {e}")
-        return """<!DOCTYPE html>
-<html>
-<head><title>Error</title></head>
-<body><h1>Dashboard not found</h1><p>Could not load dashboard from {dashboard_path}</p></body>
-</html>"""
-
-def get_dashboard_html():
-    """Cached dashboard HTML getter"""
-    if not hasattr(get_dashboard_html, '_cache'):
-        get_dashboard_html._cache = _load_dashboard_html()
-    return get_dashboard_html._cache
-
-# This marker is used to identify where the old embedded HTML was
-_DASHBOARD_PLACEHOLDER = """<!DOCTYPE html>
+DASHBOARD_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -838,7 +834,7 @@ class COIPHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path.rstrip("/") or "/"
         try:
             if path == "/":
-                self._send_html(get_dashboard_html())
+                self._send_html(DASHBOARD_HTML)
 
             elif path == "/health":
                 self._send({"status":"ok","version":VERSION,"healthy":True,
