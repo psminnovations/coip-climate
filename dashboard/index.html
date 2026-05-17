@@ -236,22 +236,6 @@ nav{position:sticky;top:0;z-index:200;background:var(--white);border-bottom:1px 
 .ch-valid{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#15803D;
   margin-top:10px;padding:6px 12px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:20px}
 
-/* API EXPLORER */
-.api-tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;background:var(--off)}
-.api-tabs::-webkit-scrollbar{display:none}
-.api-tab{padding:10px 14px;font-family:var(--mono);font-size:10px;font-weight:500;
-  color:var(--ink3);cursor:pointer;border:none;background:transparent;
-  border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;letter-spacing:.02em}
-.api-tab:hover{color:var(--ink2)}
-.api-tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:700}
-.api-out{padding:16px 18px;font-family:var(--mono);font-size:11px;color:var(--ink2);
-  line-height:1.8;max-height:280px;overflow:auto;background:var(--white)}
-.json-key{color:#1E40AF;font-weight:600}
-.json-str{color:#166534}
-.json-num{color:#9A3412}
-.json-bool{color:#6D28D9;font-weight:600}
-.json-null{color:var(--ink4);font-style:italic}
-
 /* FOOTER */
 footer{background:var(--ink);color:rgba(255,255,255,.5);padding:22px 28px;
   display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
@@ -436,30 +420,6 @@ footer{background:var(--ink);color:rgba(255,255,255,.5);padding:22px 28px;
   </div>
 </div>
 
-<!-- SECTION 5: API EXPLORER -->
-<div class="sec-hd fa d5">
-  <div class="sec-ico si-purple">🔌</div>
-  <div class="sec-inf">
-    <div class="sec-ttl">Live API Explorer</div>
-    <div class="sec-dsc">Click any endpoint to fetch real data from the deployed Railway API</div>
-  </div>
-  <div class="sec-rule"></div>
-  <span class="sec-tag" style="background:#F5F3FF;color:#6D28D9">REST API</span>
-</div>
-<div class="card fa d5">
-  <div class="api-tabs" id="ep-tabs">
-    <button class="api-tab active" data-ep="/health">GET /health</button>
-    <button class="api-tab" data-ep="/climate/guntur">GET /climate/guntur</button>
-    <button class="api-tab" data-ep="/cdsp/forecast">GET /cdsp/forecast</button>
-    <button class="api-tab" data-ep="/sve/vulnerability">GET /sve/vulnerability</button>
-    <button class="api-tab" data-ep="/climate/forecast">GET /climate/forecast</button>
-    <button class="api-tab" data-ep="/chain/summary">GET /chain/summary</button>
-    <button class="api-tab" data-ep="/evidence">GET /evidence</button>
-    <button class="api-tab" data-ep="/demo">GET /demo</button>
-  </div>
-  <div class="api-out" id="api-out"><span style="color:var(--ink4)">Click an endpoint above to fetch live data…</span></div>
-</div>
-
 </div><!-- /main -->
 
 <footer>
@@ -489,25 +449,6 @@ const RBDR={CRITICAL:'#FECACA',HIGH:'#FED7AA',MEDIUM:'#FDE68A',LOW:'#BBF7D0',MIN
 const RBD={CRITICAL:'cbadge br',HIGH:'cbadge bh',MEDIUM:'cbadge bm',LOW:'cbadge bg',MINIMAL:'cbadge bn'};
 const rc=l=>RC[l]||'#6B7891';
 const rbd=l=>RBD[l]||'cbadge bn';
-
-function prettyJson(o,d=0){
-  const sp='  '.repeat(d),s2='  '.repeat(d+1);
-  if(Array.isArray(o)){
-    if(!o.length)return'[]';
-    const r='[\n'+o.map(v=>s2+prettyJson(v,d+1)).join(',\n')+'\n'+sp+']';
-    return r.replace(/\n/g,'<br>').replace(/ {2,}/g,m=>'&nbsp;'.repeat(m.length));
-  }
-  if(o&&typeof o==='object'){
-    const e=Object.entries(o).map(([k,v])=>s2+`<span class="json-key">"${k}"</span>: `+prettyJson(v,d+1));
-    const r='{\n'+e.join(',\n')+'\n'+sp+'}';
-    return r.replace(/\n/g,'<br>').replace(/ {2,}/g,m=>'&nbsp;'.repeat(m.length));
-  }
-  if(typeof o==='string')return`<span class="json-str">"${o}"</span>`;
-  if(typeof o==='number')return`<span class="json-num">${o}</span>`;
-  if(typeof o==='boolean')return`<span class="json-bool">${o}</span>`;
-  if(o===null)return`<span class="json-null">null</span>`;
-  return String(o);
-}
 
 async function apiFetch(ep){
   const ctrl=new AbortController();
@@ -680,23 +621,11 @@ $('btn-rdt').addEventListener('click',async()=>{
   }finally{btn.disabled=false;btn.innerHTML='⚡ Compute RDT Now';}
 });
 
-// 8. API EXPLORER
-$('ep-tabs').addEventListener('click',async e=>{
-  const tab=e.target.closest('.api-tab'); if(!tab)return;
-  document.querySelectorAll('.api-tab').forEach(t=>t.classList.remove('active'));
-  tab.classList.add('active');
-  const ep=tab.dataset.ep;
-  const out=$('api-out'); if(out)out.innerHTML=`<span style="color:var(--ink4)">Fetching ${ep}…</span>`;
-  try{const d=await apiFetch(ep);if(out)out.innerHTML=prettyJson(d);}
-  catch(e){if(out)out.innerHTML=`<div class="err">Error: ${e.message}</div>`;}
-});
-
 // INIT
 (async()=>{
   await loadClimate();
   loadDisease();loadVuln();loadForecast();loadEvidence();loadChain();
   setInterval(loadClimate,5*60*1000);
-  setTimeout(()=>{const h=document.querySelector('.api-tab[data-ep="/health"]');if(h)h.click();},1000);
 })();
 </script>
 </body>
